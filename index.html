@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a1a">
+<title>JDARQ</title>
+<link rel="stylesheet" href="estilos.css">
+<link rel="icon" href="favicon.ico">
+</head>
+<body>
+
+<div id="loadingScreen" class="loading-screen">
+  <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" class="loading-logo" onerror="this.style.display='none'">
+  <div class="loading-spinner"></div>
+  <p>Cargando...</p>
+</div>
+
+<div class="topbar" id="topbarEl" style="display:none">
+  <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" class="topbar-logo" onerror="this.style.display='none'">
+  <div id="topbarRight"><span class="topbar-user">Sin sesion</span></div>
+</div>
+
+<div id="mainContent"></div>
+
+<nav class="botnav" id="botnavEl" style="display:none">
+  <button class="bni" data-page="panel"        onclick="goTo('panel')">        <span class="bni-ico">📊</span><span class="bni-lbl">Panel</span></button>
+  <button class="bni" data-page="empresas"     onclick="goTo('empresas')">     <span class="bni-ico">🏢</span><span class="bni-lbl">Empresas</span></button>
+  <button class="bni" data-page="incidencias"  onclick="goTo('incidencias')">  <span class="bni-ico">📋</span><span class="bni-lbl">Incidencias</span></button>
+  <button class="bni" data-page="agenda"       onclick="goTo('agenda')">       <span class="bni-ico">📅</span><span class="bni-lbl">Agenda</span></button>
+  <button class="bni" data-page="tecnicos"     onclick="goTo('tecnicos')">     <span class="bni-ico">👷</span><span class="bni-lbl">Técnicos</span></button>
+</nav>
+
+<div id="overlayEl" class="overlay hidden"></div>
+<div id="toastEl" class="toast"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
