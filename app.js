@@ -1501,18 +1501,43 @@ window.eliminarTecnico = async (tid) => {
 // ============================================
 // EXPONER AL SCOPE GLOBAL
 // ============================================
-window.goTo            = goTo;
-window.closeModal      = closeModal;
-window.cerrarSesion    = cerrarSesion;
-window.abrirLogin      = abrirLogin;
-window.pinNum          = pinNum;
-window.pinDel          = pinDel;
-window.pinLogin        = pinLogin;
-window.modalNuevaOrden = modalNuevaOrden;
-window.guardarOrden    = guardarOrden;
-window.generarOT       = generarOT;
-window.verOrdenPDF     = verOrdenPDF;
-window.buscarTienda    = buscarTienda;
+window.goTo                   = goTo;
+window.closeModal             = closeModal;
+window.cerrarSesion           = cerrarSesion;
+window.abrirLogin             = abrirLogin;
+window.pinNum                 = pinNum;
+window.pinDel                 = pinDel;
+window.pinLogin               = pinLogin;
+window.modalNuevaOrden        = modalNuevaOrden;
+window.guardarOrden           = guardarOrden;
+window.generarOT              = generarOT;
+window.verOrdenPDF            = verOrdenPDF;
+window.buscarTienda           = buscarTienda;
+window.limpiarFirmaOT         = limpiarFirmaOT;
+window.previewFotoOT          = previewFotoOT;
+window.aprobarOrden           = aprobarOrden;
+window.generarQRAprobacion    = generarQRAprobacion;
+window.confirmarQR            = confirmarQR;
+window.modalQREquipo          = modalQREquipo;
+window.descargarHistorialCliente = descargarHistorialCliente;
+window.modalNuevoCliente      = modalNuevoCliente;
+window.guardarCliente         = guardarCliente;
+window.modalEditarCliente     = modalEditarCliente;
+window.actualizarCliente      = actualizarCliente;
+window.confirmarEliminarCliente = confirmarEliminarCliente;
+window.modalNuevoEquipo       = modalNuevoEquipo;
+window.guardarEquipo          = guardarEquipo;
+window.modalEditarEquipo      = modalEditarEquipo;
+window.actualizarEquipo       = actualizarEquipo;
+window.confirmarEliminarEquipo = confirmarEliminarEquipo;
+window.eliminarServicio       = eliminarServicio;
+window.modalNuevoTecnico      = modalNuevoTecnico;
+window.guardarTecnico         = guardarTecnico;
+window.modalEditarTecnico     = modalEditarTecnico;
+window.actualizarTecnico      = actualizarTecnico;
+window.eliminarTecnico        = eliminarTecnico;
+window.filtrarClientes        = filtrarClientes;
+window.filtrarEquipos         = filtrarEquipos;
 
 // ============================================
 // INIT
