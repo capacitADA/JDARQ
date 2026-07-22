@@ -155,7 +155,7 @@ async function cargarDatos() {
     main.innerHTML = '<div class="loading-screen" style="position:relative;min-height:200px;background:transparent;"><div class="loading-spinner"></div></div>';
     try {
         const [cs, es, ss, ts, ti] = await Promise.all([
-            getDocs(query(collection(db, 'clientes'),  orderBy('nombre'))),
+            getDocs(query(collection(db, 'empresas'),  orderBy('nombre'))),
             getDocs(collection(db, 'equipos')),
             getDocs(query(collection(db, 'servicios'), orderBy('fecha', 'desc'))),
             getDocs(collection(db, 'tecnicos')),
@@ -1264,7 +1264,7 @@ window.guardarCliente = async () => {
     const nombre = document.getElementById('cNombre')?.value?.trim();
     if (!nombre) { toast('⚠️ Nombre requerido'); return; }
     try {
-        await addDoc(collection(db,'clientes'), {
+        await addDoc(collection(db,'empresas'), {
             nombre, nit: document.getElementById('cNit')?.value?.trim()||'',
             telefono: document.getElementById('cTel')?.value?.trim()||'',
             direccion: document.getElementById('cDir')?.value?.trim()||'',
@@ -1291,7 +1291,7 @@ window.modalEditarCliente = (cid) => {
 };
 window.actualizarCliente = async (cid) => {
     try {
-        await updateDoc(doc(db,'clientes',cid), {
+        await updateDoc(doc(db,'empresas',cid), {
             nombre: document.getElementById('cNombre').value,
             nit:    document.getElementById('cNit').value,
             telefono: document.getElementById('cTel').value,
@@ -1311,7 +1311,7 @@ async function eliminarCliente(cid) {
             for (const s of getServiciosEquipo(eid)) await deleteDoc(doc(db,'servicios',s.id));
             await deleteDoc(doc(db,'equipos',eid));
         }
-        await deleteDoc(doc(db,'clientes',cid));
+        await deleteDoc(doc(db,'empresas',cid));
         await cargarDatos(); goTo('clientes'); toast('🗑️ Cliente eliminado');
     } catch(e) { toast('⚠️ Error: '+e.message); }
 }
