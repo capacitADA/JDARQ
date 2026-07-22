@@ -4,11 +4,11 @@
 // Última actualización: Mayo 2026
 // ============================================
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
     getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc,
     query, orderBy, writeBatch, runTransaction, getDoc
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBf8Zu84MPTjx60MsFstL6esFgYEpVurxA",
