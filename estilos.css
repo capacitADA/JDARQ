@@ -1,6 +1,6 @@
 /* ============================================
-   KRYOTEC SERVICIOS SAS - ESTILOS MOBILE-FIRST
-   PALETA AZUL CORPORATIVA
+   JDARQ — JD Arquisoluciones
+   PALETA: NEGRO · DORADO · BLANCO
    ============================================ */
 
 *, *::before, *::after {
@@ -11,10 +11,10 @@
 
 :root {
     /* Azul principal - reemplazo del viejo verde */
-    --blue-primary:   #1e3a8a;  /* azul intenso */
-    --blue-dark:      #172554;
-    --blue-light:     #dbeafe;
-    --blue-mid:       #3b82f6;
+    --blue-primary:   #1a1a1a;  /* azul intenso */
+    --blue-dark:      #0d0d0d;
+    --blue-light:     #fef3c7;
+    --blue-mid:       #C9A84C;
     
     /* Mantenemos los nombres de variables para no romper referencias */
     --green:       var(--blue-primary);
@@ -23,20 +23,20 @@
     --green-mid:   var(--blue-mid);
     
     /* Dorado / acento ahora también azul */
-    --gold:        #60a5fa;
-    --gold-bg:     #eff6ff;
-    --gold-col:    var(--blue-mid);
+    --gold:        #C9A84C;
+    --gold-bg:     #fef9ec;
+    --gold-col:    #a8863a;
     
     /* Neutros */
     --border:      #e2e8f0;
-    --bg:          #f0f6fc;
-    --bg2:         #f8fbfe;
+    --bg:          #f5f5f5;
+    --bg2:         #fafafa;
     --text:        #0f172a;
     --muted:       #475569;
     --hint:        #94a3b8;
     
     /* Estados - ahora azules */
-    --success:     #2563eb;    /* antes era verde #16a34a */
+    --success:     #16a34a;    /* antes era verde #16a34a */
     --red:         #dc2626;
     --purple:      #7c3aed;
     
@@ -46,7 +46,7 @@
     /* Variables legacy de azul (ya no se usan pero se dejan por compatibilidad) */
     --blue:        var(--blue-primary);
     --teal:        var(--blue-mid);
-    --teal-dark:   #1e4d8c;
+    --teal-dark:   #a8863a;
 }
 
 html, body {
