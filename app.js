@@ -27,11 +27,12 @@ const db = getFirestore(fbApp);
 // ============================================
 // VARIABLES GLOBALES
 // ============================================
-let clientes = [], equipos = [], servicios = [], tecnicos = [];
+let clientes = [], equipos = [], servicios = [], tecnicos = [], tiendas = [];
 let jmcTiendas = [], d1Tiendas = [];
 let currentView = 'panel';
 let sesionActual = null;
 let selectedClienteId = null;
+let selectedTiendaId = null;
 let selectedEquipoId = null;
 let fotosNuevas = [null, null, null];
 let fotosD1 = [null, null];
@@ -84,11 +85,12 @@ async function cargarDatos() {
     const main = document.getElementById('mainContent');
     main.innerHTML = '<div class="loading-screen"><div class="loading-spinner"></div><p>Cargando...</p></div>';
     try {
-        const [cs, es, ss, ts, jmc, d1t] = await Promise.all([
+        const [cs, es, ss, ts, tis, jmc, d1t] = await Promise.all([
             getDocs(query(collection(db, 'clientes'), orderBy('nombre'))),
             getDocs(collection(db, 'equipos')),
             getDocs(query(collection(db, 'servicios'), orderBy('fecha', 'desc'))),
             getDocs(collection(db, 'tecnicos')),
+            getDocs(collection(db, 'tiendas')),
             getDocs(collection(db, 'jmc_tiendas')),
             getDocs(collection(db, 'd1_tiendas'))
         ]);
@@ -96,6 +98,7 @@ async function cargarDatos() {
         equipos = es.docs.map(d => ({ id: d.id, ...d.data() }));
         servicios = ss.docs.map(d => ({ id: d.id, ...d.data() }));
         tecnicos = ts.docs.map(d => ({ id: d.id, ...d.data() }));
+        tiendas = tis.docs.map(d => ({ id: d.id, ...d.data() }));
         jmcTiendas = jmc.docs.map(d => ({ id: d.id, ...d.data() }));
         d1Tiendas = d1t.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch (err) {
@@ -112,6 +115,9 @@ async function cargarDatos() {
 const getEq = id => equipos.find(e => e.id === id);
 const getCl = id => clientes.find(c => c.id === id);
 const getTec = id => tecnicos.find(t => t.id === id);
+const getTienda = id => tiendas.find(t => t.id === id);
+const getTiendasCliente = cid => tiendas.filter(t => t.clienteId === cid);
+const getEquiposTienda = tid => equipos.filter(e => e.tiendaId === tid);
 const getEquiposCliente = cid => equipos.filter(e => e.clienteId === cid);
 const getServiciosEquipo = eid => servicios.filter(s => s.equipoId === eid);
 const getServiciosCliente = cid => servicios.filter(s => getEquiposCliente(cid).some(e => e.id === s.equipoId));
@@ -181,9 +187,10 @@ function actualizarTopbar() {
 
 function cerrarSesion() { sesionActual = null; actualizarTopbar(); renderView(); toast('👋 Sesion cerrada'); }
 
-function goTo(view, cid = null, eid = null) {
+function goTo(view, cid = null, tid = null, eid = null) {
     currentView = view;
     selectedClienteId = cid;
+    selectedTiendaId = tid;
     selectedEquipoId = eid;
     closeModal();
     renderView();
@@ -200,6 +207,7 @@ function renderView() {
         case 'panel': main.innerHTML = renderPanel(); break;
         case 'clientes': main.innerHTML = renderClientes(); break;
         case 'detalle': main.innerHTML = renderDetalleCliente(); break;
+        case 'detalle-tienda': main.innerHTML = renderDetalleTienda(); break;
         case 'historial': main.innerHTML = renderHistorial(); break;
         case 'equipos': main.innerHTML = renderEquipos(); break;
         case 'servicios': main.innerHTML = renderServicios(); if (window.aplicarFiltros) aplicarFiltros(); break;
@@ -248,7 +256,27 @@ function renderPanel() {
 
 
 function renderClientes() {
-    return `<div class="page"><div class="sec-head"><h2>Clientes (${clientes.length})</h2><button class="btn btn-blue btn-sm" onclick="modalNuevoCliente()">+ Nuevo</button></div><input class="search" placeholder="🔍 Buscar..." oninput="filtrarClientes(this.value)" id="searchClientes"><div id="clientesGrid">${clientes.map(c => `<div class="cc" data-search="${(c.nombre+c.ciudad+c.telefono+(c.email||'')).toLowerCase()}"><div style="display:flex;justify-content:space-between;"><div class="cc-name">${c.nombre}</div>${esAdmin() ? `<div><button class="ib" onclick="modalEditarCliente('${c.id}')">✏️</button><button class="ib" onclick="modalEliminarCliente('${c.id}')">🗑️</button></div>` : ''}</div><div class="cc-row">📞 ${c.telefono}</div>${c.email ? `<div class="cc-row">📧 ${c.email}</div>` : ''}<div class="cc-row">📍 ${c.direccion}</div><span class="city-tag">${c.ciudad}</span>${c.latitud ? `<div><a class="map-link" href="https://maps.google.com/?q=${c.latitud},${c.longitud}" target="_blank">🗺️ Ver GPS</a></div>` : ''}<div class="cc-meta">${getEquiposCliente(c.id).length} activo(s) · ${getServiciosCliente(c.id).length} servicio(s)</div><button class="link-btn" onclick="goTo('detalle','${c.id}')">Ver activos →</button></div>`).join('')}</div></div>`;
+    return `<div class="page">
+        <div class="sec-head"><h2>Clientes (${clientes.length})</h2>${esAdmin() ? `<button class="btn btn-blue btn-sm" onclick="modalNuevoCliente()">+ Nuevo</button>` : ''}</div>
+        <input class="search" placeholder="🔍 Buscar..." oninput="filtrarClientes(this.value)" id="searchClientes">
+        <div id="clientesGrid">
+        ${clientes.map(c => {
+            const numTiendas = tiendas.filter(t => t.cliente === c.nombre).length;
+            const numEquipos = getEquiposCliente(c.id).length;
+            const numServ    = getServiciosCliente(c.id).length;
+            return `<div class="cc" data-search="${(c.nombre+(c.nit||'')).toLowerCase()}">
+                <div style="display:flex;justify-content:space-between;">
+                    <div class="cc-name">${c.nombre}</div>
+                    ${esAdmin() ? `<div><button class="ib" onclick="modalEditarCliente('${c.id}')">✏️</button><button class="ib" onclick="modalEliminarCliente('${c.id}')">🗑️</button></div>` : ''}
+                </div>
+                ${c.nit ? `<div class="cc-row">🪪 NIT: ${c.nit}</div>` : ''}
+                ${c.telefono ? `<div class="cc-row">📞 ${c.telefono}</div>` : ''}
+                <div class="cc-meta">${numTiendas} tienda(s) · ${numEquipos} activo(s) · ${numServ} servicio(s)</div>
+                <button class="link-btn" onclick="goTo('detalle','${c.id}')">Ver tiendas →</button>
+            </div>`;
+        }).join('')}
+        </div>
+    </div>`;
 }
 
 function filtrarClientes(v) {
@@ -259,17 +287,112 @@ function filtrarClientes(v) {
 function renderDetalleCliente() {
     const c = getCl(selectedClienteId);
     if (!c) { goTo('clientes'); return ''; }
-    const eqs = getEquiposCliente(c.id);
-    const esD1 = esClienteD1(c.id);
-    return `<div class="page"><div class="det-hdr"><button class="back" onclick="goTo('clientes')">← Volver</button><div><div class="cc-name">${c.nombre}</div><div class="cc-meta">${c.ciudad}</div></div></div><div class="info-box"><div class="cc-row">📞 <strong>${c.telefono}</strong></div>${c.email ? `<div class="cc-row">📧 ${c.email}</div>` : ''}<div class="cc-row">📍 ${c.direccion}</div>${c.latitud ? `<a class="map-link" href="https://maps.google.com/?q=${c.latitud},${c.longitud}" target="_blank">🗺️ Ver en Google Maps</a>` : '<div class="cc-meta">Sin GPS</div>'}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem;"><span style="font-weight:700;">Activos (${eqs.length})</span><div style="display:flex;gap:6px;"><button class="btn btn-gray btn-sm" onclick="descargarHistorialCliente('${c.id}')">📥 Historial</button><button class="btn btn-blue btn-sm" onclick="modalNuevoEquipo('${c.id}')">+ Activo</button></div></div>${eqs.map(e => `<div class="ec"><div style="display:flex;justify-content:space-between;"><div><div class="ec-name">${e.tipo ? e.tipo+' · ' : ''}${e.marca} ${e.modelo}</div><div class="ec-meta">📍 ${e.ubicacion} · Serie: ${e.serie||'S/N'}</div><div class="ec-meta">${getServiciosEquipo(e.id).length} servicio(s)</div></div>${esAdmin() ? `<div><button class="ib" onclick="modalEditarEquipo('${e.id}')">✏️</button><button class="ib" onclick="modalEliminarEquipo('${e.id}')">🗑️</button></div>` : ''}</div><div class="ec-btns"><button class="ab" onclick="goTo('historial','${c.id}','${e.id}')">📋 Servicios</button>${esD1 ? `<button class="ab" onclick="modalActaD1('${e.id}')">➕ Nuevo D1</button>` : `<button class="ab" onclick="modalNuevoServicio('${e.id}')">➕ Nuevo</button>`}<button class="ab" onclick="generarInformePDF('${e.id}')">📄 PDF</button><button class="ab" onclick="modalQR('${e.id}')">📱 QR</button></div></div>`).join('')}</div>`;
+    const tiendasCliente = getTiendasCliente(c.id);
+    return `<div class="page">
+        <div class="det-hdr">
+            <button class="back" onclick="goTo('clientes')">← Volver</button>
+            <div><div class="cc-name">${c.nombre}</div></div>
+        </div>
+        ${c.nit ? `<div class="info-box"><div class="cc-row">🪪 NIT: ${c.nit}</div>${c.telefono?`<div class="cc-row">📞 ${c.telefono}</div>`:''}</div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem;">
+            <span style="font-weight:700;">Tiendas (${tiendasCliente.length})</span>
+            <input class="search" placeholder="🔍 Buscar tienda..." oninput="filtrarTiendasDetalle(this.value)" style="width:180px;margin:0;">
+        </div>
+        <div id="tiendasDetalleGrid">
+        ${tiendasCliente.map(t => {
+            const numEq  = getEquiposTienda(t.id).length;
+            const numSrv = servicios.filter(s => getEquiposTienda(t.id).some(e => e.id === s.equipoId)).length;
+            return `<div class="ec" data-search="${(t.codigo+t.nombre+t.municipio).toLowerCase()}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div>
+                        <div class="ec-name">${t.nombre}</div>
+                        <div class="ec-meta">📍 ${t.municipio||''} · ${t.departamento||''}</div>
+                        <div class="ec-meta">Código: <strong>${t.codigo}</strong></div>
+                        ${t.latitud ? `<a class="map-link" href="https://maps.google.com/?q=${t.latitud},${t.longitud}" target="_blank">🗺️ Ver GPS</a>` : ''}
+                        <div class="ec-meta">${numEq} activo(s) · ${numSrv} incidencia(s)</div>
+                    </div>
+                </div>
+                <div class="ec-btns">
+                    <button class="ab" onclick="goTo('detalle-tienda','${c.id}','${t.id}')">🔧 Ver activos</button>
+                    <button class="ab" onclick="modalQRTienda('${t.id}')">📱 QR</button>
+                </div>
+            </div>`;
+        }).join('')}
+        </div>
+    </div>`;
 }
+
+window.filtrarTiendasDetalle = v => {
+    document.querySelectorAll('#tiendasDetalleGrid .ec').forEach(el => {
+        el.style.display = (el.dataset.search||'').includes(v.toLowerCase()) ? '' : 'none';
+    });
+};
+
+function renderDetalleTienda() {
+    const t = getTienda(selectedTiendaId);
+    const c = getCl(selectedClienteId);
+    if (!t) { goTo('detalle', selectedClienteId); return ''; }
+    const eqs = getEquiposTienda(t.id);
+    return `<div class="page">
+        <div class="det-hdr">
+            <button class="back" onclick="goTo('detalle','${c?.id}')">← ${c?.nombre||'Volver'}</button>
+            <div>
+                <div class="cc-name">${t.nombre}</div>
+                <div class="ec-meta">📍 ${t.municipio||''}, ${t.departamento||''} · Cód: ${t.codigo}</div>
+            </div>
+        </div>
+        ${t.latitud ? `<div style="margin-bottom:.5rem;"><a class="map-link" href="https://maps.google.com/?q=${t.latitud},${t.longitud}" target="_blank">🗺️ Ver ubicación en Google Maps</a></div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem;">
+            <span style="font-weight:700;">Activos (${eqs.length})</span>
+            <div style="display:flex;gap:6px;">
+                <button class="btn btn-gray btn-sm" onclick="descargarHistorialTienda('${t.id}')">📥 Historial</button>
+                ${esAdmin() || sesionActual ? `<button class="btn btn-blue btn-sm" onclick="modalNuevoEquipo('${c?.id}','${t.id}')">+ Activo</button>` : ''}
+            </div>
+        </div>
+        ${eqs.map(e => {
+            const numSrv = getServiciosEquipo(e.id).length;
+            return `<div class="ec">
+                <div style="display:flex;justify-content:space-between;">
+                    <div>
+                        <div class="ec-name">${e.tipo ? e.tipo+' · ' : ''}${e.marca} ${e.modelo}</div>
+                        <div class="ec-meta">📍 ${e.ubicacion||'Sin ubicación'} · Serie: ${e.serie||'S/N'}</div>
+                        <div class="ec-meta" style="color:${e.estado==='Operativo'?'#16a34a':e.estado==='Fuera de servicio'?'#dc2626':'#f59e0b'};">
+                            ● ${e.estado||'Sin estado'}
+                        </div>
+                        <div class="ec-meta">${numSrv} incidencia(s)</div>
+                    </div>
+                    ${esAdmin() ? `<div><button class="ib" onclick="modalEditarEquipo('${e.id}')">✏️</button><button class="ib" onclick="modalEliminarEquipo('${e.id}')">🗑️</button></div>` : ''}
+                </div>
+                <div class="ec-btns">
+                    <button class="ab" onclick="goTo('historial','${c?.id}','${t.id}','${e.id}')">📋 Incidencias</button>
+                    <button class="ab" onclick="modalNuevaIncidencia('${e.id}')">➕ Nueva</button>
+                    <button class="ab" onclick="generarInformePDF('${e.id}')">📄 PDF</button>
+                    <button class="ab" onclick="modalQR('${e.id}')">📱 QR</button>
+                </div>
+            </div>`;
+        }).join('')}
+    </div>`;
+}
+
+window.descargarHistorialTienda = (tid) => {
+    const t   = getTienda(tid);
+    const eqs = getEquiposTienda(tid);
+    let csv   = 'ID MTTO,Fecha,Tipo,Técnico,Aprobada\n';
+    eqs.forEach(e => getServiciosEquipo(e.id).forEach(s => {
+        csv += `${s.idMtto||''},${s.fecha||''},${s.tipo||''},${s.tecnico||''},${s.aprobado?'Sí':'No'}\n`;
+    }));
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = `Historial_${t?.nombre||tid}.csv`;
+    a.click();
+};
 
 function renderHistorial() {
     const e = getEq(selectedEquipoId);
     if (!e) { goTo('clientes'); return ''; }
     const c = getCl(e.clienteId);
     const ss = getServiciosEquipo(e.id).sort((a,b) => new Date(b.fecha)-new Date(a.fecha));
-    return `<div class="page"><div class="det-hdr"><button class="back" onclick="goTo('detalle','${e.clienteId}')">← Volver</button><div><div class="ec-name">${e.tipo ? e.tipo+' · ' : ''}${e.marca} ${e.modelo}</div><div class="ec-meta">${e.ubicacion} · ${c?.nombre}</div></div></div><div style="margin-bottom:2rem;"><span style="font-weight:700;">Historial (${ss.length})</span></div>${ss.map(s => `<div class="si"><div class="si-top"><span class="badge ${s.tipo==='Mantenimiento'?'b-blue':s.tipo==='Reparacion'?'b-red':'b-green'}">${s.tipo}</span><span>${fmtFecha(s.fecha)}</span></div><div class="si-info">🔧 ${s.tecnico}</div>${s.funcionarioNombre ? '<div class="si-info">✍️ Recibido por: <strong>'+s.funcionarioNombre+'</strong>'+(s.funcionarioId?' · '+s.funcionarioId:'')+'</div>' : ''}<div class="si-info">${s.descripcion}</div>${s.proximoMantenimiento ? `<div class="si-info" style="color:var(--gold);">📅 Proximo: ${fmtFecha(s.proximoMantenimiento)}</div>` : ''}<div class="fotos-strip">${(s.fotos||[]).map(f => `<img class="fthumb" src="${f}" loading="lazy">`).join('')}</div><div class="si-top" style="justify-content:flex-end;margin-top:4px;">${puedeEditar(s.tecnico) ? `<button class="ib" onclick="modalEditarServicio('${s.id}')">✏️</button>` : ''}${esAdmin() ? `<button class="ib" onclick="eliminarServicio('${s.id}')">🗑️</button>` : ''}</div></div>`).join('')}</div>`;
+    return `<div class="page"><div class="det-hdr"><button class="back" onclick="goTo('detalle-tienda','${e.clienteId}','${e.tiendaId||selectedTiendaId}')">← Volver</button><div><div class="ec-name">${e.tipo ? e.tipo+' · ' : ''}${e.marca} ${e.modelo}</div><div class="ec-meta">${e.ubicacion} · ${c?.nombre}</div></div></div><div style="margin-bottom:2rem;"><span style="font-weight:700;">Historial (${ss.length})</span></div>${ss.map(s => `<div class="si"><div class="si-top"><span class="badge ${s.tipo==='Mantenimiento'?'b-blue':s.tipo==='Reparacion'?'b-red':'b-green'}">${s.tipo}</span><span>${fmtFecha(s.fecha)}</span></div><div class="si-info">🔧 ${s.tecnico}</div>${s.funcionarioNombre ? '<div class="si-info">✍️ Recibido por: <strong>'+s.funcionarioNombre+'</strong>'+(s.funcionarioId?' · '+s.funcionarioId:'')+'</div>' : ''}<div class="si-info">${s.descripcion}</div>${s.proximoMantenimiento ? `<div class="si-info" style="color:var(--gold);">📅 Proximo: ${fmtFecha(s.proximoMantenimiento)}</div>` : ''}<div class="fotos-strip">${(s.fotos||[]).map(f => `<img class="fthumb" src="${f}" loading="lazy">`).join('')}</div><div class="si-top" style="justify-content:flex-end;margin-top:4px;">${puedeEditar(s.tecnico) ? `<button class="ib" onclick="modalEditarServicio('${s.id}')">✏️</button>` : ''}${esAdmin() ? `<button class="ib" onclick="eliminarServicio('${s.id}')">🗑️</button>` : ''}</div></div>`).join('')}</div>`;
 }
 
 function renderEquipos() {
