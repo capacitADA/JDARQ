@@ -85,22 +85,18 @@ async function cargarDatos() {
     const main = document.getElementById('mainContent');
     main.innerHTML = '<div class="loading-screen"><div class="loading-spinner"></div><p>Cargando...</p></div>';
     try {
-        const [cs, es, ss, ts, tis, jmc, d1t] = await Promise.all([
+        const [cs, es, ss, ts, tis] = await Promise.all([
             getDocs(query(collection(db, 'empresas'), orderBy('nombre'))),
             getDocs(collection(db, 'equipos')),
             getDocs(query(collection(db, 'servicios'), orderBy('fecha', 'desc'))),
             getDocs(collection(db, 'tecnicos')),
-            getDocs(collection(db, 'tiendas')),
-            getDocs(collection(db, 'jmc_tiendas')),
-            getDocs(collection(db, 'd1_tiendas'))
+            getDocs(collection(db, 'tiendas'))
         ]);
-        clientes = cs.docs.map(d => ({ id: d.id, ...d.data() }));
-        equipos = es.docs.map(d => ({ id: d.id, ...d.data() }));
+        clientes  = cs.docs.map(d => ({ id: d.id, ...d.data() }));
+        equipos   = es.docs.map(d => ({ id: d.id, ...d.data() }));
         servicios = ss.docs.map(d => ({ id: d.id, ...d.data() }));
-        tecnicos = ts.docs.map(d => ({ id: d.id, ...d.data() }));
-        tiendas = tis.docs.map(d => ({ id: d.id, ...d.data() }));
-        jmcTiendas = jmc.docs.map(d => ({ id: d.id, ...d.data() }));
-        d1Tiendas = d1t.docs.map(d => ({ id: d.id, ...d.data() }));
+        tecnicos  = ts.docs.map(d => ({ id: d.id, ...d.data() }));
+        tiendas   = tis.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch (err) {
         toast('⚠️ Error de conexión');
         main.innerHTML = '<div class="page" style="text-align:center;padding:2rem;"><p>⚠️ Error al cargar datos</p><button class="btn btn-blue" onclick="location.reload()">Reintentar</button></div>';
@@ -1251,6 +1247,92 @@ function generarInformePDF(eid) {
 
 
 
+function modalQRTienda(tid) {
+    const t = getTienda(tid);
+    if (!t) return;
+    const url = `${location.origin}${location.pathname}#/tienda/${tid}`;
+    showModal(`<div class="modal" style="max-width:340px;">
+      <div class="modal-h"><h3>📱 QR Tienda</h3><button class="xbtn" onclick="closeModal()">✕</button></div>
+      <div class="modal-b" style="text-align:center;">
+        <div style="font-weight:700;margin-bottom:.25rem;">${t.nombre}</div>
+        <div style="font-size:.76rem;color:#555;margin-bottom:.75rem;">Código: ${t.codigo} · ${t.municipio}</div>
+        <div id="qrTiendaRender"></div>
+        <div style="font-size:.68rem;color:var(--hint);margin-top:.5rem;">Escanea para ver activos e historial de la tienda</div>
+        <div class="modal-foot">
+          <button class="btn btn-gray" onclick="closeModal()">Cerrar</button>
+          <button class="btn btn-gold" onclick="imprimirQRTienda('${url}','${t.nombre}')">🖨️ Imprimir</button>
+        </div>
+      </div>
+    </div>`);
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+    script.onload = () => new QRCode(document.getElementById('qrTiendaRender'), { text: url, width: 200, height: 200 });
+    document.head.appendChild(script);
+    if (window.QRCode) new QRCode(document.getElementById('qrTiendaRender'), { text: url, width: 200, height: 200 });
+}
+
+window.imprimirQRTienda = (url, nombre) => {
+    const w = window.open('', '_blank');
+    w.document.write(`<!DOCTYPE html><html><head><title>QR ${nombre}</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
+    </head><body style="text-align:center;font-family:Arial;padding:2rem;">
+    <h2 style="font-size:14pt;">${nombre}</h2>
+    <div id="qr" style="display:inline-block;margin:1rem 0;"></div>
+    <div style="font-size:9pt;color:#555;">Escanea para ver activos e historial</div>
+    <script>new QRCode(document.getElementById('qr'),{text:'${url}',width:250,height:250});setTimeout(()=>window.print(),800);<\/script>
+    </body></html>`);
+};
+
+function manejarRutaTienda() {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#/tienda/')) return false;
+    const tid = hash.replace('#/tienda/', '');
+    const t   = getTienda(tid);
+    if (!t) return false;
+    const main   = document.getElementById('mainContent');
+    const topbar = document.querySelector('.topbar');
+    const botnav = document.querySelector('.botnav');
+    if (topbar) topbar.style.display = 'none';
+    if (botnav) botnav.style.display = 'none';
+    const eqs = getEquiposTienda(tid);
+    const totalInc = eqs.reduce((n, e) => n + getServiciosEquipo(e.id).length, 0);
+    main.innerHTML = `
+    <div style="max-width:600px;margin:0 auto;padding:1rem;">
+      <div style="background:var(--negro,#1a1a1a);color:white;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+        <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" style="height:40px;" onerror="this.style.display='none'">
+        <div>
+          <div style="font-size:.72rem;opacity:.6;">JD Arquisoluciones S.A.S</div>
+          <div style="font-weight:700;font-size:1rem;">${t.nombre}</div>
+          <div style="font-size:.78rem;opacity:.8;">📍 ${t.municipio||''}, ${t.departamento||''} · Cód: ${t.codigo}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div style="background:white;border-radius:10px;padding:12px;text-align:center;border:1px solid #e0e0e0;">
+          <div style="font-size:1.8rem;font-weight:800;color:#C9A84C;">${eqs.length}</div>
+          <div style="font-size:.72rem;color:#666;">Activos registrados</div>
+        </div>
+        <div style="background:white;border-radius:10px;padding:12px;text-align:center;border:1px solid #e0e0e0;">
+          <div style="font-size:1.8rem;font-weight:800;color:#1a1a1a;">${totalInc}</div>
+          <div style="font-size:.72rem;color:#666;">Incidencias históricas</div>
+        </div>
+      </div>
+      ${t.latitud ? `<div style="margin-bottom:12px;"><a href="https://maps.google.com/?q=${t.latitud},${t.longitud}" target="_blank" style="background:#4285f4;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:.82rem;">🗺️ Ver en Google Maps</a></div>` : ''}
+      <div style="font-weight:700;font-size:.85rem;margin-bottom:8px;">Activos (${eqs.length})</div>
+      ${eqs.map(e => {
+        const inc = getServiciosEquipo(e.id);
+        const ultima = inc[0];
+        return `<div style="background:white;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #e0e0e0;">
+          <div style="font-weight:700;">${e.nombre||e.tipo||'Activo'}</div>
+          <div style="font-size:.76rem;color:#555;">${e.area||''} ${e.ubicacion?'· '+e.ubicacion:''}</div>
+          <div style="font-size:.76rem;color:${e.estado==='Operativo'?'#16a34a':'#dc2626'};font-weight:700;">● ${e.estado||'Sin estado'}</div>
+          <div style="font-size:.72rem;color:#888;margin-top:4px;">${inc.length} incidencia(s) ${ultima?'· Última: '+fmtFecha(ultima.fecha):''}</div>
+        </div>`;
+      }).join('')}
+      ${eqs.length === 0 ? '<div style="color:#aaa;font-size:.82rem;text-align:center;padding:1rem;">Sin activos registrados</div>' : ''}
+    </div>`;
+    return true;
+}
+
 function manejarRutaQR() { const hash = window.location.hash; if (!hash.startsWith('#/equipo/')) return false; const eid = hash.replace('#/equipo/', ''); const e = getEq(eid); if (!e) return false; const c = getCl(e.clienteId); const esD1 = esClienteD1(e.clienteId); const tienda = esD1 ? getTiendaD1(e?.idTienda) : null; const main = document.getElementById('mainContent'); const topbar = document.querySelector('.topbar'); const botnav = document.querySelector('.botnav'); if (topbar) topbar.style.display = 'none'; if (botnav) botnav.style.display = 'none'; main.style.background = 'white'; const ss = getServiciosEquipo(eid).sort((a,b) => new Date(b.fecha)-new Date(a.fecha)); const waMsg = encodeURIComponent('Hola KRYOTEC, necesito ayuda con el ' + (e?.tipo||'') + ' ' + (e?.marca||'') + ' ' + (e?.modelo||'') + ' ubicado en ' + (e?.ubicacion||'') + ', pueden contactarme por favor'); const waUrl = 'https://wa.me/573105533937?text=' + waMsg; let html = ''; if (esD1 && tienda) { html = `<div style="max-width:600px;margin:0 auto;padding:1rem;"><div style="background:#0c214a;color:white;border-radius:12px;padding:16px;margin-bottom:12px;"><div style="font-weight:700;">JD Arquisoluciones S.A.S</div><div style="font-size:1.2rem;font-weight:700;">${e?.tipo || 'Equipo'} ${e?.marca || ''} ${e?.modelo || ''}</div><div>${tienda.tienda || e?.ubicacion || ''}</div></div><div style="background:white;border:1px solid #ccc;border-radius:12px;padding:12px;"><div style="font-weight:700;">🔧 DATOS TÉCNICOS</div><table style="width:100%;"><tr><td>Marca/Modelo</td><td>${e?.marca || ''} ${e?.modelo || ''}</td></tr><tr><td>Serie</td><td>${e?.serie || 'N/A'}</td></tr></table></div><div style="background:#25D366;border-radius:12px;padding:12px;text-align:center;margin-top:12px;"><a href="${waUrl}" target="_blank" style="color:white;text-decoration:none;font-weight:700;">📱 Contactar por WhatsApp</a></div>${sesionActual ? `<button onclick="modalActaD1('${eid}')" class="btn-d1-nuevo" style="background:#e4002b;color:white;width:100%;padding:12px;margin-top:12px;border-radius:12px;">📋 Nuevo servicio D1</button>` : `<div style="background:#fef2f2;padding:12px;margin-top:12px;text-align:center;"><button onclick="mostrarLoginQR('${eid}')" class="btn btn-blue">Iniciar sesión</button></div>`}<h3>Historial (${ss.length})</h3>${ss.map(s => `<div style="border:1px solid #ccc;padding:8px;margin-top:8px;"><div>${fmtFecha(s.fecha)} - ${s.tipo}</div><div>${s.descripcion}</div></div>`).join('')}</div>`; } else { html = `<div style="max-width:600px;margin:0 auto;padding:1rem;"><div style="background:#0c214a;color:white;border-radius:12px;padding:16px;"><div>JD Arquisoluciones S.A.S</div><div>${e?.tipo || ''} ${e?.marca || ''} ${e?.modelo || ''}</div><div>${e?.ubicacion || ''}</div></div><div style="background:#25D366;border-radius:12px;padding:12px;text-align:center;margin-top:12px;"><a href="${waUrl}" target="_blank" style="color:white;text-decoration:none;">📱 Contactar por WhatsApp</a></div><h3>Historial (${ss.length})</h3>${ss.map(s => `<div style="border:1px solid #ccc;padding:8px;margin-top:8px;"><div>${fmtFecha(s.fecha)} - ${s.tipo}</div><div>${s.descripcion}</div></div>`).join('')}</div>`; } main.innerHTML = html; return true; }
 window.mostrarLoginQR = async (eid) => { const tecnicosList = tecnicos.filter(t => t.rol === 'tecnico' || t.rol === 'admin'); if (tecnicosList.length === 0) { toast('⚠️ No hay técnicos registrados'); return; } let options = '<option value="">Seleccionar técnico</option>'; tecnicosList.forEach(t => { options += `<option value="${t.id}">${t.nombre}</option>`; }); showModal(`<div class="modal" style="max-width:320px;"><div class="modal-h"><h3>🔐 Iniciar sesión</h3><button class="xbtn" onclick="closeModal()">✕</button></div><div class="modal-b"><label class="fl">Técnico</label><select class="fi" id="qrLoginTecnico">${options}</select><label class="fl">Clave (4 dígitos)</label><input class="fi" type="password" id="qrLoginClave" maxlength="4"><div class="modal-foot"><button class="btn btn-gray" onclick="closeModal()">Cancelar</button><button class="btn btn-blue" onclick="ejecutarLoginQR('${eid}')">Ingresar</button></div></div></div>`); };
 window.ejecutarLoginQR = async (eid) => { const tecId = document.getElementById('qrLoginTecnico')?.value; const clave = document.getElementById('qrLoginClave')?.value; if (!tecId || !clave) { toast('⚠️ Selecciona técnico e ingresa clave'); return; } const tec = getTec(tecId); if (!tec || tec.clave !== clave) { toast('❌ Credenciales incorrectas'); return; } sesionActual = tec; actualizarTopbar(); closeModal(); toast(`✅ Bienvenido, ${tec.nombre.split(' ')[0]}`); manejarRutaQR(); setTimeout(() => modalActaD1(eid), 500); };
@@ -1276,5 +1358,85 @@ window.actualizarServicioD1 = async (sid) => {
     } catch(err) { toast('⚠️ Error: ' + err.message); }
 };
 
-window.goTo=goTo; window.closeModal=closeModal; window.filtrarClientes=filtrarClientes; window.filtrarEquipos=filtrarEquipos; window.aplicarFiltros=aplicarFiltros; window.limpiarFiltros=limpiarFiltros; window.modalNuevoCliente=modalNuevoCliente; window.modalEditarCliente=modalEditarCliente; window.modalEliminarCliente=modalEliminarCliente; window.guardarCliente=guardarCliente; window.actualizarCliente=actualizarCliente; window.modalNuevoEquipo=modalNuevoEquipo; window.modalEditarEquipo=modalEditarEquipo; window.modalEliminarEquipo=modalEliminarEquipo; window.guardarEquipo=guardarEquipo; window.actualizarEquipo=actualizarEquipo; window.modalNuevoServicio=modalNuevoServicio; window.modalEditarServicio=modalEditarServicio; window.guardarServicio=guardarServicio; window.actualizarServicio=actualizarServicio; window.eliminarServicio=eliminarServicio; window.modalNuevoTecnico=modalNuevoTecnico; window.modalEditarTecnico=modalEditarTecnico; window.guardarTecnico=guardarTecnico; window.actualizarTecnico=actualizarTecnico; window.eliminarTecnico=eliminarTecnico; window.modalRecordar=modalRecordar; window.enviarWhatsApp=enviarWhatsApp; window.modalActaD1=modalActaD1; window.limpiarFirmaD1=limpiarFirmaD1; window.previewFoto=previewFoto; window.borrarFoto=borrarFoto; window.onTipoChange=onTipoChange; window.abrirLogin=abrirLogin; window.mlPin=mlPin; window.mlDel=mlDel; window.mlLogin=mlLogin; window.cerrarSesion=cerrarSesion; window.generarInformePDF=generarInformePDF; window.modalQR=modalQR; window.descargarHistorialCliente=descargarHistorialCliente; window.obtenerGPS=obtenerGPS; window.modalInformeJMC=modalInformeJMC; window.modalInformeRO=modalInformeRO; window.actualizarServicioD1=actualizarServicioD1; window.exportarActaD1=exportarActaD1;
-(async()=>{ await conectarDriveAuto(); await cargarDatos(); if(!manejarRutaQR()) renderView(); })();
+window.goTo=goTo; window.closeModal=closeModal; window.filtrarClientes=filtrarClientes; window.filtrarEquipos=filtrarEquipos; window.aplicarFiltros=aplicarFiltros; window.limpiarFiltros=limpiarFiltros; window.modalNuevoCliente=modalNuevoCliente; window.modalEditarCliente=modalEditarCliente; window.modalEliminarCliente=modalEliminarCliente; window.guardarCliente=guardarCliente; window.actualizarCliente=actualizarCliente; window.modalNuevoEquipo=modalNuevoEquipo; window.modalEditarEquipo=modalEditarEquipo; window.modalEliminarEquipo=modalEliminarEquipo; window.guardarEquipo=guardarEquipo; window.actualizarEquipo=actualizarEquipo; window.modalNuevoServicio=modalNuevoServicio; window.modalEditarServicio=modalEditarServicio; window.guardarServicio=guardarServicio; window.actualizarServicio=actualizarServicio; window.eliminarServicio=eliminarServicio; window.modalNuevoTecnico=modalNuevoTecnico; window.modalEditarTecnico=modalEditarTecnico; window.guardarTecnico=guardarTecnico; window.actualizarTecnico=actualizarTecnico; window.eliminarTecnico=eliminarTecnico; window.modalRecordar=modalRecordar; window.enviarWhatsApp=enviarWhatsApp; window.modalActaD1=modalActaD1; window.limpiarFirmaD1=limpiarFirmaD1; window.previewFoto=previewFoto; window.borrarFoto=borrarFoto; window.onTipoChange=onTipoChange; window.abrirLogin=abrirLogin; window.mlPin=mlPin; window.mlDel=mlDel; window.mlLogin=mlLogin; window.cerrarSesion=cerrarSesion; window.generarInformePDF=generarInformePDF; window.modalQR=modalQR;
+window.modalQRTienda=modalQRTienda; window.descargarHistorialCliente=descargarHistorialCliente; window.obtenerGPS=obtenerGPS; window.modalInformeJMC=modalInformeJMC; window.modalInformeRO=modalInformeRO; window.actualizarServicioD1=actualizarServicioD1; window.exportarActaD1=exportarActaD1;
+
+// ============================================
+// QR TIENDA — FICHA PÚBLICA
+// ============================================
+function modalQRTienda(tid) {
+    const t = getTienda(tid);
+    if (!t) { toast('⚠️ Tienda no encontrada'); return; }
+    const url = `${window.location.origin}${window.location.pathname}#/tienda/${tid}`;
+    const qrDiv = document.createElement('div');
+    qrDiv.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:260px;height:260px;';
+    document.body.appendChild(qrDiv);
+    new window.QRCode(qrDiv, { text: url, width: 260, height: 260 });
+    setTimeout(() => {
+        const qrDataUrl = qrDiv.querySelector('canvas')?.toDataURL('image/png') || '';
+        document.body.removeChild(qrDiv);
+        showModal(`<div class="modal"><div class="modal-h" style="background:var(--negro);"><h3 style="color:var(--dorado);">📱 QR Tienda</h3><button class="xbtn" style="color:white;" onclick="closeModal()">✕</button></div>
+        <div class="modal-b" style="text-align:center;">
+            <div style="font-weight:700;font-size:.95rem;margin-bottom:.25rem;">${t.nombre}</div>
+            <div style="font-size:.78rem;color:#555;margin-bottom:.75rem;">${t.municipio} · ${t.departamento} · Cód: ${t.codigo}</div>
+            <img src="${qrDataUrl}" style="width:200px;height:200px;border:1px solid #eee;border-radius:8px;">
+            <div style="font-size:.72rem;color:#94a3b8;margin-top:.5rem;">Escanear para ver ficha de la tienda</div>
+            <div class="modal-foot" style="justify-content:center;">
+                <a href="${url}" target="_blank" class="btn btn-gold btn-sm">🔗 Abrir ficha</a>
+                <button class="btn btn-gray btn-sm" onclick="closeModal()">Cerrar</button>
+            </div>
+        </div></div>`);
+    }, 300);
+}
+
+function manejarRutaTienda() {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#/tienda/')) return false;
+    const tid = hash.replace('#/tienda/', '');
+    const t   = getTienda(tid);
+    if (!t) return false;
+    const c   = getCl(t.clienteId);
+    const eqs = getEquiposTienda(tid);
+    const incs = servicios.filter(s => eqs.some(e => e.id === s.equipoId));
+    const topbar = document.querySelector('.topbar');
+    const botnav = document.querySelector('.botnav');
+    if (topbar) topbar.style.display = 'none';
+    if (botnav) botnav.style.display = 'none';
+    document.getElementById('mainContent').innerHTML = `
+        <div style="max-width:600px;margin:0 auto;padding:1rem;">
+            <div style="background:var(--negro);color:white;border-radius:12px;padding:16px;margin-bottom:12px;border-bottom:3px solid var(--dorado);">
+                <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" style="height:32px;margin-bottom:8px;" onerror="this.style.display='none'">
+                <div style="font-size:1.1rem;font-weight:700;color:var(--dorado);">${t.nombre}</div>
+                <div style="font-size:.78rem;opacity:.7;">${t.municipio}, ${t.departamento}</div>
+                <div style="font-size:.78rem;opacity:.7;">Código: ${t.codigo}</div>
+                ${t.latitud ? `<a href="https://maps.google.com/?q=${t.latitud},${t.longitud}" target="_blank" style="color:var(--dorado);font-size:.76rem;">🗺️ Ver en mapa</a>` : ''}
+            </div>
+
+            <div style="background:white;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #e0e0e0;">
+                <div style="font-weight:700;font-size:.82rem;margin-bottom:8px;border-bottom:2px solid var(--dorado);padding-bottom:4px;">🔧 ACTIVOS (${eqs.length})</div>
+                ${eqs.length === 0 ? '<div style="color:#94a3b8;font-size:.78rem;">Sin activos registrados</div>' :
+                eqs.map(e => `
+                    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:.78rem;">
+                        <span><strong>${e.nombre||e.tipo||'—'}</strong> · ${e.area||''}</span>
+                        <span style="color:${e.estado==='Operativo'?'#16a34a':'#dc2626'};">● ${e.estado||'—'}</span>
+                    </div>`).join('')}
+            </div>
+
+            <div style="background:white;border-radius:10px;padding:12px;border:1px solid #e0e0e0;">
+                <div style="font-weight:700;font-size:.82rem;margin-bottom:8px;border-bottom:2px solid var(--dorado);padding-bottom:4px;">📋 INCIDENCIAS (${incs.length})</div>
+                ${incs.length === 0 ? '<div style="color:#94a3b8;font-size:.78rem;">Sin incidencias registradas</div>' :
+                incs.slice(0,10).map(s => `
+                    <div style="padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:.78rem;">
+                        <div style="display:flex;justify-content:space-between;">
+                            <strong style="color:var(--dorado);">#${s.nroIncidencia||s.id.slice(0,6)}</strong>
+                            <span style="color:#555;">${fmtFecha(s.fecha)}</span>
+                        </div>
+                        <div style="color:#555;">${s.descripcion?.slice(0,80)||''}${s.descripcion?.length>80?'...':''}</div>
+                        <div style="color:${s.aprobado?'#16a34a':'#f59e0b'};">${s.aprobado?'✅ Aprobada':'⏳ Pendiente'}</div>
+                    </div>`).join('')}
+            </div>
+        </div>`;
+    return true;
+}
+
+(async()=>{ await conectarDriveAuto(); await cargarDatos(); if(!manejarRutaQR() && !manejarRutaTienda()) renderView(); })();
