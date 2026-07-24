@@ -1118,7 +1118,7 @@ ${s.fotos?.length ? `
     }
 }
 
-function modalActaD1(eid) {
+async function modalActaD1(eid) {
     if (!sesionActual) { toast('🔑 Debes iniciar sesión primero'); return; }
     const e = getEq(eid);
     if (!e) { toast('❌ Equipo no encontrado'); return; }
