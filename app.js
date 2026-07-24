@@ -350,8 +350,8 @@ function renderDetalleTienda() {
             return `<div class="ec">
                 <div style="display:flex;justify-content:space-between;">
                     <div>
-                        <div class="ec-name">${e.tipo ? e.tipo+' · ' : ''}${e.marca} ${e.modelo}</div>
-                        <div class="ec-meta">📍 ${e.ubicacion||'Sin ubicación'} · Serie: ${e.serie||'S/N'}</div>
+                        <div class="ec-name">${e.nombre||e.tipo||e.marca||'Activo'}</div>
+                        ${e.descripcion ? `<div class="ec-meta">${e.descripcion}</div>` : ''}
                         <div class="ec-meta" style="color:${e.estado==='Operativo'?'#16a34a':e.estado==='Fuera de servicio'?'#dc2626':'#f59e0b'};">
                             ● ${e.estado||'Sin estado'}
                         </div>
@@ -361,7 +361,7 @@ function renderDetalleTienda() {
                 </div>
                 <div class="ec-btns">
                     <button class="ab" onclick="goTo('historial','${c?.id}','${t.id}','${e.id}')">📋 Incidencias</button>
-                    <button class="ab" onclick="modalNuevaIncidencia('${e.id}')">➕ Nueva</button>
+                    <button class="ab" onclick="modalNuevaIncidencia('${e.id}')">➕ Nueva incidencia</button>
                     <button class="ab" onclick="generarInformePDF('${e.id}')">📄 PDF</button>
                     <button class="ab" onclick="modalQR('${e.id}')">📱 QR</button>
                 </div>
@@ -388,7 +388,7 @@ function renderHistorial() {
     if (!e) { goTo('clientes'); return ''; }
     const c = getCl(e.clienteId);
     const ss = getServiciosEquipo(e.id).sort((a,b) => new Date(b.fecha)-new Date(a.fecha));
-    return `<div class="page"><div class="det-hdr"><button class="back" onclick="goTo('detalle-tienda','${e.clienteId}','${e.tiendaId||selectedTiendaId}')">← Volver</button><div><div class="ec-name">${e.tipo ? e.tipo+' · ' : ''}${e.marca} ${e.modelo}</div><div class="ec-meta">${e.ubicacion} · ${c?.nombre}</div></div></div><div style="margin-bottom:2rem;"><span style="font-weight:700;">Historial (${ss.length})</span></div>${ss.map(s => `<div class="si"><div class="si-top"><span class="badge ${s.tipo==='Mantenimiento'?'b-blue':s.tipo==='Reparacion'?'b-red':'b-green'}">${s.tipo}</span><span>${fmtFecha(s.fecha)}</span></div><div class="si-info">🔧 ${s.tecnico}</div>${s.funcionarioNombre ? '<div class="si-info">✍️ Recibido por: <strong>'+s.funcionarioNombre+'</strong>'+(s.funcionarioId?' · '+s.funcionarioId:'')+'</div>' : ''}<div class="si-info">${s.descripcion}</div>${s.proximoMantenimiento ? `<div class="si-info" style="color:var(--gold);">📅 Proximo: ${fmtFecha(s.proximoMantenimiento)}</div>` : ''}<div class="fotos-strip">${(s.fotos||[]).map(f => `<img class="fthumb" src="${f}" loading="lazy">`).join('')}</div><div class="si-top" style="justify-content:flex-end;margin-top:4px;">${puedeEditar(s.tecnico) ? `<button class="ib" onclick="modalEditarServicio('${s.id}')">✏️</button>` : ''}${esAdmin() ? `<button class="ib" onclick="eliminarServicio('${s.id}')">🗑️</button>` : ''}</div></div>`).join('')}</div>`;
+    return `<div class="page"><div class="det-hdr"><button class="back" onclick="goTo('detalle-tienda','${e.clienteId}','${e.tiendaId||selectedTiendaId}')">← Volver</button><div><div class="ec-name">${e.nombre||e.tipo||e.marca||'Activo'}</div><div class="ec-meta">${e.ubicacion} · ${c?.nombre}</div></div></div><div style="margin-bottom:2rem;"><span style="font-weight:700;">Historial (${ss.length})</span></div>${ss.map(s => `<div class="si"><div class="si-top"><span class="badge ${s.tipo==='Mantenimiento'?'b-blue':s.tipo==='Reparacion'?'b-red':'b-green'}">${s.tipo}</span><span>${fmtFecha(s.fecha)}</span></div><div class="si-info">🔧 ${s.tecnico}</div>${s.funcionarioNombre ? '<div class="si-info">✍️ Recibido por: <strong>'+s.funcionarioNombre+'</strong>'+(s.funcionarioId?' · '+s.funcionarioId:'')+'</div>' : ''}<div class="si-info">${s.descripcion}</div>${s.proximoMantenimiento ? `<div class="si-info" style="color:#C9A84C;">📅 Proximo: ${fmtFecha(s.proximoMantenimiento)}</div>` : ''}<div class="fotos-strip">${(s.fotos||[]).map(f => `<img class="fthumb" src="${f}" loading="lazy">`).join('')}</div><div class="si-top" style="justify-content:flex-end;margin-top:4px;">${puedeEditar(s.tecnico) ? `<button class="ib" onclick="modalEditarServicio('${s.id}')">✏️</button>` : ''}${esAdmin() ? `<button class="ib" onclick="eliminarServicio('${s.id}')">🗑️</button>` : ''}</div></div>`).join('')}</div>`;
 }
 
 function renderEquipos() {
@@ -414,7 +414,7 @@ function aplicarFiltros() {
     const el = document.getElementById('listaServicios');
     if (!el) return;
     if (!filtrados.length) { el.innerHTML='<p class="cc-meta" style="text-align:center;">Sin resultados.</p>'; return; }
-    el.innerHTML = filtrados.map(s => { const e = getEq(s.equipoId); const c = getCl(e?.clienteId); return `<div class="si"><div class="si-top"><span class="badge ${s.tipo==='Mantenimiento'?'b-blue':s.tipo==='Reparacion'?'b-red':'b-green'}">${s.tipo}</span><span>${fmtFecha(s.fecha)}</span></div><div class="si-info">👤 ${c?.nombre||'N/A'} · ${e?.marca||''} ${e?.modelo||''}</div><div class="si-info">📍 ${e?.ubicacion||''} · 🔧 ${s.tecnico}</div><div class="si-info">${s.descripcion}</div>${s.proximoMantenimiento?`<div class="si-info" style="color:var(--gold);">📅 Proximo: ${fmtFecha(s.proximoMantenimiento)}</div>`:''}</div>`; }).join('');
+    el.innerHTML = filtrados.map(s => { const e = getEq(s.equipoId); const c = getCl(e?.clienteId); return `<div class="si"><div class="si-top"><span class="badge ${s.tipo==='Mantenimiento'?'b-blue':s.tipo==='Reparacion'?'b-red':'b-green'}">${s.tipo}</span><span>${fmtFecha(s.fecha)}</span></div><div class="si-info">👤 ${c?.nombre||'N/A'} · ${e?.marca||''} ${e?.modelo||''}</div><div class="si-info">📍 ${e?.ubicacion||''} · 🔧 ${s.tecnico}</div><div class="si-info">${s.descripcion}</div>${s.proximoMantenimiento?`<div class="si-info" style="color:#C9A84C;">📅 Proximo: ${fmtFecha(s.proximoMantenimiento)}</div>`:''}</div>`; }).join('');
 }
 
 function limpiarFiltros() { ['fAnio','fMes','fTipo','fCliente','fTecnico'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); aplicarFiltros(); }
@@ -647,7 +647,478 @@ function limpiarFirmaD1() { const canvas = document.getElementById('d1FirmaCanva
 // ============================================
 // MODAL ACTA D1 - FORMULARIO DE INGRESO DE DATOS
 // ============================================
-async function modalActaD1(eid) {
+async function modalNuevaIncidencia(eid) {
+    if (!sesionActual) { toast('🔑 Debes iniciar sesión primero'); return; }
+    const e = getEq(eid);
+    if (!e) { toast('❌ Activo no encontrado'); return; }
+    const t = getTienda(e.tiendaId);
+    const hoy = new Date().toISOString().split('T')[0];
+
+    const tiposAsist = ['Reparación','Garantía','Ajuste','Modificación','Servicio','Mejora','Combinación'];
+    const tiposFalla = ['BPM','Daños Logísticos','Locativo','Eléctricas','Refrigeración','Seguridad','SST','Tanqueo Planta','Puertas','Influencia Externa'];
+    const paramsEval = [
+        {cat:'FUNCIONAMIENTO', desc:'La falla reportada fue solucionada con el trabajo realizado.'},
+        {cat:'CALIDAD', desc:'La calidad del trabajo está de acuerdo a la requerida por el personal o el equipo.'},
+        {cat:'LIMPIEZA', desc:'El equipo o área intervenida se dejó armado y/o organizado como se encontraba en un inicio.'},
+        {cat:'LIMPIEZA', desc:'Los escombros y suciedad generada por el técnico fueron retirados del lugar.'},
+        {cat:'LIMPIEZA', desc:'Se indicó la causa de la novedad al personal que recibió el trabajo.'},
+        {cat:'CAPACITACIÓN', desc:'Se indicó cómo prevenir que el problema se vuelva a presentar.'},
+        {cat:'CAPACITACIÓN', desc:'Se indicó cómo actuar en caso de que el problema se vuelva a presentar.'},
+        {cat:'SERVICIO', desc:'Se encuentra satisfecho con el servicio ejecutado.'},
+    ];
+
+    showModal(`<div class="modal modal-wide" onclick="event.stopPropagation()">
+      <div class="modal-h" style="background:#1a1a1a;border-bottom:2px solid #C9A84C;">
+        <h3 style="color:#C9A84C;">📋 ORDEN DE TRABAJO</h3>
+        <button class="xbtn" style="color:white;" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-b">
+
+        <!-- DATOS FIJOS CONTRATISTA -->
+        <div style="background:#f5f5f5;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:.78rem;">
+          <strong>JD Arquisoluciones S.A.S</strong> · NIT 901.223.583-8 · 310 553 3937<br>
+          Técnico: <strong>${sesionActual.nombre}</strong> · CC ${sesionActual.cedula||''}
+        </div>
+
+        <!-- ID MTTO Y CÓDIGO TIENDA -->
+        <div class="fr">
+          <div>
+            <label class="fl">ID MTTO / N° Incidencia D1 ★</label>
+            <input class="fi" id="otIdMtto" placeholder="246723" style="font-weight:700;font-size:1rem;">
+          </div>
+          <div>
+            <label class="fl">Código de tienda ★</label>
+            <input class="fi" id="otCodTienda" value="${t?.codigo||''}" placeholder="13116" oninput="autocompletarTienda(this.value)" ${t?'readonly':''}>
+          </div>
+        </div>
+        <div id="otTiendaInfo" style="font-size:.76rem;color:#16a34a;margin-bottom:8px;font-weight:600;">
+          ${t ? `✅ ${t.nombre} · ${t.municipio}, ${t.departamento}` : ''}
+        </div>
+        <div class="fr">
+          <div>
+            <label class="fl">Fecha</label>
+            <input class="fi" type="date" id="otFecha" value="${hoy}">
+          </div>
+          <div>
+            <label class="fl">Activo</label>
+            <input class="fi" readonly value="${e.nombre||e.tipo||'Activo'}" style="background:#f5f5f5;font-weight:700;">
+          </div>
+        </div>
+
+        <!-- TIPO DE ASISTENCIA -->
+        <label class="fl">Tipo de asistencia</label>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:10px;">
+          ${tiposAsist.map(t => `<label style="display:flex;align-items:center;gap:5px;font-size:.78rem;padding:4px 6px;border:1px solid #e0e0e0;border-radius:6px;cursor:pointer;background:white;">
+            <input type="radio" name="otTipoAsist" value="${t}" ${t==='Servicio'?'checked':''}> ${t}
+          </label>`).join('')}
+        </div>
+
+        <!-- TIPO DE FALLA -->
+        <label class="fl">Tipo de falla</label>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:10px;">
+          ${tiposFalla.map(f => `<label style="display:flex;align-items:center;gap:5px;font-size:.76rem;padding:4px 6px;border:1px solid #e0e0e0;border-radius:6px;cursor:pointer;background:white;">
+            <input type="checkbox" class="otFalla" value="${f}"> ${f}
+          </label>`).join('')}
+        </div>
+
+        <!-- DESCRIPCIÓN -->
+        <label class="fl">Descripción detallada de la solicitud ★</label>
+        <textarea class="fi" id="otDescSolicitud" rows="3" placeholder="Describe la solicitud..."></textarea>
+
+        <label class="fl">Actividades ejecutadas ★</label>
+        <textarea class="fi" id="otActividades" rows="3" placeholder="Describe las actividades realizadas..."></textarea>
+
+        <label class="fl">Repuestos cambiados</label>
+        <textarea class="fi" id="otRepuestos" rows="2" placeholder="Repuestos utilizados..."></textarea>
+
+        <label class="fl">Recomendaciones</label>
+        <textarea class="fi" id="otRecomend" rows="2" placeholder="Recomendaciones..."></textarea>
+
+        <!-- EVALUACIÓN DEL SERVICIO -->
+        <div style="background:#1a1a1a;color:#C9A84C;padding:6px 8px;border-radius:6px;font-weight:700;font-size:.78rem;text-align:center;margin:10px 0 6px;">EVALUACIÓN DEL SERVICIO</div>
+        <div style="border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;margin-bottom:10px;">
+          <div style="display:grid;grid-template-columns:80px 1fr 40px 40px;background:#1a1a1a;color:#C9A84C;font-size:.65rem;font-weight:700;padding:4px 6px;">
+            <div>Parámetro</div><div>Descripción</div><div style="text-align:center;">SI</div><div style="text-align:center;">NO</div>
+          </div>
+          ${paramsEval.map((p,i) => `
+          <div style="display:grid;grid-template-columns:80px 1fr 40px 40px;border-top:1px solid #f0f0f0;padding:4px 6px;background:white;align-items:center;">
+            <div style="font-size:.62rem;font-weight:700;color:#C9A84C;">${p.cat}</div>
+            <div style="font-size:.68rem;">${p.desc}</div>
+            <div style="text-align:center;"><input type="radio" name="eval_${i}" value="SI" checked></div>
+            <div style="text-align:center;"><input type="radio" name="eval_${i}" value="NO"></div>
+          </div>`).join('')}
+        </div>
+
+        <!-- CALIFICACIÓN -->
+        <div style="background:#1a1a1a;color:#C9A84C;padding:6px 8px;border-radius:6px;font-weight:700;font-size:.78rem;text-align:center;margin-bottom:8px;">CALIFICA MI SERVICIO</div>
+        <div style="display:flex;justify-content:center;gap:24px;margin-bottom:12px;">
+          ${[['Excelente','😊'],['Bueno','😐'],['Malo','😞']].map(([v,em]) => `
+          <label style="text-align:center;cursor:pointer;">
+            <div style="font-size:1.6rem;">${em}</div>
+            <div style="font-size:.72rem;font-weight:700;">${v}</div>
+            <input type="radio" name="otCalif" value="${v}" ${v==='Excelente'?'checked':''}>
+          </label>`).join('')}
+        </div>
+
+        <!-- HORAS -->
+        <div class="fr">
+          <div><label class="fl">Hora de entrada</label><input class="fi" type="time" id="otHoraEnt"></div>
+          <div><label class="fl">Hora de salida</label><input class="fi" type="time" id="otHoraSal"></div>
+        </div>
+
+        <!-- FUNCIONARIO TIENDA -->
+        <div style="background:#1a1a1a;color:#C9A84C;padding:6px 8px;border-radius:6px;font-weight:700;font-size:.78rem;text-align:center;margin:10px 0 6px;">FUNCIONARIO DE LA TIENDA</div>
+        <div class="fr">
+          <div><label class="fl">Nombre</label><input class="fi" id="otFuncNombre" placeholder="Nombre completo"></div>
+          <div><label class="fl">Cargo</label><input class="fi" id="otFuncCargo" placeholder="Cargo"></div>
+        </div>
+        <label class="fl">Teléfono</label>
+        <input class="fi" id="otFuncTel" type="tel" placeholder="Teléfono de contacto" style="margin-bottom:12px;">
+
+        <!-- FOTOS -->
+        <div style="background:#1a1a1a;color:#C9A84C;padding:6px 8px;border-radius:6px;font-weight:700;font-size:.78rem;text-align:center;margin-bottom:8px;">EVIDENCIAS FOTOGRÁFICAS</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          ${[['ANTES',0],['DESPUÉS',1]].map(([lbl,i]) => `
+          <div>
+            <div style="font-size:.72rem;font-weight:700;text-align:center;margin-bottom:4px;">${lbl}</div>
+            <div class="fslot" id="fslotOT${i}" onclick="document.getElementById('finputOT${i}').click()">
+              <div class="fslot-plus">+</div>
+              <input type="file" id="finputOT${i}" accept="image/*" style="display:none" onchange="previewFotoOT(this,${i})">
+            </div>
+          </div>`).join('')}
+        </div>
+
+        <!-- FIRMA JEFE -->
+        <div style="background:#1a1a1a;color:#C9A84C;padding:6px 8px;border-radius:6px;font-weight:700;font-size:.78rem;text-align:center;margin-bottom:8px;">FIRMA FUNCIONARIO DE LA TIENDA</div>
+        <canvas id="firmaOTCanvas" style="width:100%;height:110px;border:2px dashed #e0e0e0;border-radius:8px;background:white;touch-action:none;display:block;"></canvas>
+        <button class="btn btn-gray btn-sm" onclick="limpiarFirmaOT()" style="margin-top:4px;margin-bottom:12px;">Limpiar firma</button>
+
+        <div class="modal-foot">
+          <button class="btn btn-gray" onclick="closeModal()">Cancelar</button>
+          <button class="btn" style="background:#555;color:white;" onclick="guardarIncidencia('${eid}',false)">💾 Guardar</button>
+          <button class="btn" style="background:#C9A84C;color:#1a1a1a;font-weight:700;" onclick="guardarIncidencia('${eid}',true)">📄 Guardar y PDF</button>
+        </div>
+      </div>
+    </div>`);
+
+    setTimeout(() => iniciarFirmaCanvasOT('firmaOTCanvas'), 100);
+}
+
+function iniciarFirmaCanvasOT(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    canvas.width  = canvas.offsetWidth || 340;
+    canvas.height = 110;
+    const ctx = canvas.getContext('2d');
+    let drawing = false, lx = 0, ly = 0;
+    const pos = ev => { const r=canvas.getBoundingClientRect(); const s=ev.touches?ev.touches[0]:ev; return [s.clientX-r.left, s.clientY-r.top]; };
+    canvas.addEventListener('mousedown',  e => { drawing=true; [lx,ly]=pos(e); });
+    canvas.addEventListener('mousemove',  e => { if(!drawing) return; const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(x,y); ctx.strokeStyle='#1a1a6e'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.stroke(); [lx,ly]=[x,y]; });
+    canvas.addEventListener('mouseup',    () => drawing=false);
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing=true; [lx,ly]=pos(e); }, {passive:false});
+    canvas.addEventListener('touchmove',  e => { e.preventDefault(); if(!drawing) return; const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(x,y); ctx.strokeStyle='#1a1a6e'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.stroke(); [lx,ly]=[x,y]; }, {passive:false});
+    canvas.addEventListener('touchend',   () => drawing=false);
+}
+
+window.limpiarFirmaOT = () => { const c=document.getElementById('firmaOTCanvas'); if(c) c.getContext('2d').clearRect(0,0,c.width,c.height); };
+
+window.previewFotoOT = (input, idx) => {
+    const file = input.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        if (!window._fotosOT) window._fotosOT = [null,null];
+        window._fotosOT[idx] = ev.target.result;
+        const slot = document.getElementById(`fslotOT${idx}`);
+        if (slot) slot.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+    };
+    reader.readAsDataURL(file);
+};
+
+window.autocompletarTienda = (codigo) => {
+    const t = tiendas.find(x => x.codigo === codigo.trim().toUpperCase());
+    const info = document.getElementById('otTiendaInfo');
+    if (info) info.textContent = t ? `✅ ${t.nombre} · ${t.municipio}, ${t.departamento}` : '';
+};
+
+async function guardarIncidencia(eid, generarPDF) {
+    const idMtto     = document.getElementById('otIdMtto')?.value?.trim();
+    const codTienda  = document.getElementById('otCodTienda')?.value?.trim().toUpperCase();
+    const fecha      = document.getElementById('otFecha')?.value;
+    const tipoAsist  = document.querySelector('input[name="otTipoAsist"]:checked')?.value||'';
+    const fallas     = Array.from(document.querySelectorAll('.otFalla:checked')).map(cb=>cb.value);
+    const descSolic  = document.getElementById('otDescSolicitud')?.value?.trim();
+    const actividades= document.getElementById('otActividades')?.value?.trim();
+    const repuestos  = document.getElementById('otRepuestos')?.value?.trim()||'';
+    const recomend   = document.getElementById('otRecomend')?.value?.trim()||'';
+    const calif      = document.querySelector('input[name="otCalif"]:checked')?.value||'Excelente';
+    const horaEnt    = document.getElementById('otHoraEnt')?.value||'';
+    const horaSal    = document.getElementById('otHoraSal')?.value||'';
+    const funcNombre = document.getElementById('otFuncNombre')?.value?.trim()||'';
+    const funcCargo  = document.getElementById('otFuncCargo')?.value?.trim()||'';
+    const funcTel    = document.getElementById('otFuncTel')?.value?.trim()||'';
+
+    if (!idMtto)     { toast('⚠️ Ingresa el ID MTTO / N° Incidencia'); return; }
+    if (!codTienda)  { toast('⚠️ Ingresa el código de tienda'); return; }
+    if (!descSolic)  { toast('⚠️ Completa la descripción'); return; }
+    if (!actividades){ toast('⚠️ Completa las actividades ejecutadas'); return; }
+
+    const tienda = tiendas.find(x => x.codigo === codTienda);
+    const e      = getEq(eid);
+    const firmaCanvas = document.getElementById('firmaOTCanvas');
+    const firmaJefe   = firmaCanvas ? firmaCanvas.toDataURL('image/png') : '';
+    const fotos = (window._fotosOT||[]).filter(Boolean);
+
+    const payload = {
+        equipoId:   eid,
+        tiendaId:   tienda?.id || e?.tiendaId || '',
+        clienteId:  e?.clienteId || '',
+        idMtto, fecha, tipoAsistencia: tipoAsist,
+        tiposFalla: fallas,
+        descripcion: descSolic, actividades, repuestos, recomendaciones: recomend,
+        calificacion: calif, horaEntrada: horaEnt, horaSalida: horaSal,
+        funcNombre, funcCargo, funcTel,
+        tiendaCodigo: codTienda,
+        tiendaNombre: tienda?.nombre||'',
+        tiendaMunicipio: tienda?.municipio||'',
+        tiendaDepartamento: tienda?.departamento||'',
+        tecnico: sesionActual?.nombre||'',
+        tecnicoCedula: sesionActual?.cedula||'',
+        tecnicoCargo: sesionActual?.cargo||'Técnico',
+        firmaJefe, fotos,
+        aprobado: false,
+        pendienteAprobacion: true,
+        creadoEn: new Date().toISOString(),
+        tipo: tipoAsist
+    };
+
+    try {
+        window._fotosOT = [null,null];
+        await cargarDatos();
+        if (generarPDF) { closeModal(); await generarPDFOrden({...payload}); }
+        else closeModal();
+    } catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
+
+async function generarPDFOrden(s) {
+    const e = getEq(s.equipoId);
+    const hoy = new Date(s.creadoEn||Date.now());
+    const dd  = String(hoy.getDate()).padStart(2,'0');
+    const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+    const mes = MESES[hoy.getMonth()];
+    const aa  = String(hoy.getFullYear()).slice(-2);
+
+    const TIPOS_ASIST = ['Reparación','Garantía','Ajuste','Modificación','Servicio','Mejora','Combinación'];
+    const TIPOS_FALLA = ['BPM','Daños Logísticos','Locativo','Eléctricas','Refrigeración','Seguridad','SST','Tanqueo Planta','Puertas','Influencia Externa'];
+    const PARAMS_EVAL = [
+        {cat:'FUNCIONAMIENTO', desc:'La falla reportada fue solucionada con el trabajo realizado.'},
+        {cat:'CALIDAD', desc:'La calidad del trabajo está de acuerdo a la requerida por el personal o el equipo.'},
+        {cat:'LIMPIEZA', desc:'El equipo o área intervenida se dejó armado y/o organizado como se encontraba en un inicio.'},
+        {cat:'LIMPIEZA', desc:'Los escombros y suciedad generada por el técnico fueron retirados del lugar.'},
+        {cat:'LIMPIEZA', desc:'Se indicó la causa de la novedad al personal que recibió el trabajo.'},
+        {cat:'CAPACITACIÓN', desc:'Se indicó cómo prevenir que el problema se vuelva a presentar.'},
+        {cat:'CAPACITACIÓN', desc:'Se indicó cómo actuar en caso de que el problema se vuelva a presentar.'},
+        {cat:'SERVICIO', desc:'Se encuentra satisfecho con el servicio ejecutado.'},
+    ];
+
+    function chk(val, lista) {
+        return (lista||[]).includes(val)
+            ? '<span style="font-size:11pt;font-weight:900;">&#9632;</span>'
+            : '<span style="font-size:9pt;color:#ccc;">&#9744;</span>';
+    }
+    function lineas(txt, n) {
+        const arr = (txt||'').split('\n').concat(Array(n).fill('')).slice(0,n);
+        return arr.map((t,i) => `<tr style="height:16px;border-bottom:${i===n-1?'2px':'1px'} solid ${i===n-1?'#000':'#bbb'};"><td style="padding:1px 4px;font-size:8pt;">${t}&nbsp;</td></tr>`).join('');
+    }
+
+    let selloHtml = '<div style="color:#aaa;font-size:7pt;text-align:center;">Pendiente aprobación</div>';
+    if (s.aprobado) {
+        try {
+            const selloB64 = await new Promise((res,rej) => {
+                const img = new Image(); img.crossOrigin='Anonymous';
+                img.onload = () => { const c=document.createElement('canvas'); c.width=img.width; c.height=img.height; c.getContext('2d').drawImage(img,0,0); res(c.toDataURL()); };
+                img.onerror = rej;
+                img.src = 'https://raw.githubusercontent.com/capacitADA/JDARQ/main/SELLO_jdarq.png';
+            });
+            selloHtml = `<img src="${selloB64}" style="max-height:70px;">`;
+        } catch(e) {}
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>OT_${s.idMtto||''}</title>
+<style>
+@font-face { font-family:'Meddon'; src:url('https://raw.githubusercontent.com/capacitADA/JDARQ/main/Meddon-Regular.ttf') format('truetype'); }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#fff;padding:14px;font-size:7.5pt;width:794px;}
+.blk{border:2px solid #000;border-collapse:collapse;width:100%;margin-top:-2px;}
+.blk td,.blk th{border:1px solid #000;padding:2px 5px;vertical-align:middle;font-size:7.5pt;}
+.hd{font-weight:700;text-align:center;font-size:9pt;padding:4px;background:#f5f5f5;}
+.lbl{font-weight:700;white-space:nowrap;width:1%;}
+</style></head><body>
+
+<!-- CABECERA -->
+<table style="width:100%;border-collapse:collapse;border:2px solid #000;margin-bottom:-2px;">
+  <tr>
+    <td style="width:70px;text-align:center;padding:4px;border-right:1px solid #000;">
+      <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" style="height:44px;" crossorigin="anonymous">
+    </td>
+    <td style="text-align:center;font-weight:700;font-size:10pt;">ORDEN DE TRABAJO MANTENIMIENTO</td>
+    <td style="width:160px;text-align:right;padding:4px;border-left:1px solid #000;font-size:8pt;">
+      <strong>ID MTTO: ${s.idMtto||''}</strong><br>FECHA: <strong>${dd} ${mes} ${aa}</strong>
+    </td>
+  </tr>
+</table>
+
+<!-- INFORMACIÓN CONTRATISTA -->
+<table class="blk">
+  <tr><td colspan="4" class="hd">INFORMACIÓN CONTRATISTA</td></tr>
+  <tr><td class="lbl">Razón Social:</td><td colspan="3">JD Arquisoluciones S.A.S</td></tr>
+  <tr><td class="lbl">N° NIT:</td><td>901.223.583-8</td><td class="lbl">Teléfono:</td><td>310 553 3937</td></tr>
+  <tr><td class="lbl">Contacto:</td><td colspan="3">Cristian David Londoño Romero</td></tr>
+</table>
+
+<!-- INFORMACIÓN SOLICITANTE Y TIENDA -->
+<table class="blk">
+  <tr><td colspan="6" class="hd">INFORMACIÓN SOLICITANTE Y TIENDA D1</td></tr>
+  <tr>
+    <td class="lbl">Nombre de la tienda:</td><td colspan="2">${s.tiendaNombre||s.tiendaCodigo||''}</td>
+    <td class="lbl">COD. TIENDA:</td><td colspan="2">${s.tiendaCodigo||''}</td>
+  </tr>
+  <tr>
+    <td class="lbl">Nombre del solicitante:</td><td colspan="2">${s.funcNombre||''}</td>
+    <td class="lbl">Departamento:</td><td colspan="2">${s.tiendaDepartamento||''}</td>
+  </tr>
+  <tr><td class="lbl">Municipio:</td><td colspan="5">${s.tiendaMunicipio||''}</td></tr>
+  <tr>
+    <td class="lbl">Activo:</td><td colspan="2">${e?.nombre||e?.tipo||''}</td>
+    <td class="lbl">Descripción:</td><td colspan="2">${e?.descripcion||''}</td>
+  </tr>
+</table>
+
+<!-- TIPO DE ASISTENCIA -->
+<table class="blk">
+  <tr><td colspan="8" class="hd">TIPO DE ASISTENCIA (Marque con una X)</td></tr>
+  <tr>${TIPOS_ASIST.map(t => `<td style="text-align:center;font-size:7pt;">${t} ${chk(t,[s.tipoAsistencia])}</td>`).join('')}</tr>
+</table>
+
+<!-- TIPO DE FALLA -->
+<table class="blk">
+  <tr><td colspan="5" class="hd">TIPO DE FALLA (Marque con una X)</td></tr>
+  <tr>${TIPOS_FALLA.slice(0,5).map(f => `<td style="text-align:center;font-size:7pt;">${f} ${chk(f,s.tiposFalla)}</td>`).join('')}</tr>
+  <tr>${TIPOS_FALLA.slice(5).map(f => `<td style="text-align:center;font-size:7pt;">${f} ${chk(f,s.tiposFalla)}</td>`).join('')}</tr>
+</table>
+
+<!-- DESCRIPCIÓN -->
+<table class="blk"><tr><td class="hd">Descripción detallada de la solicitud:</td></tr></table>
+<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.descripcion,4)}</table>
+
+<!-- ACTIVIDADES -->
+<table class="blk"><tr><td class="hd">Actividades ejecutadas:</td></tr></table>
+<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.actividades,5)}</table>
+
+<!-- REPUESTOS -->
+<table class="blk"><tr><td class="hd">Repuestos cambiados:</td></tr></table>
+<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.repuestos,3)}</table>
+
+<!-- RECOMENDACIONES -->
+<table class="blk"><tr><td class="hd">Recomendaciones:</td></tr></table>
+<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.recomendaciones,3)}</table>
+
+<!-- EVALUACIÓN -->
+<table class="blk">
+  <tr><td colspan="4" class="hd">EVALUACIÓN DEL SERVICIO</td></tr>
+  <tr><th style="font-size:7pt;width:80px;">PARÁMETROS</th><th style="font-size:7pt;">Descripción</th><th style="width:35px;text-align:center;font-size:7pt;">SI</th><th style="width:35px;text-align:center;font-size:7pt;">NO</th></tr>
+  ${PARAMS_EVAL.map(p => `<tr>
+    <td style="font-size:7pt;font-weight:700;">${p.cat}</td>
+    <td style="font-size:7pt;">${p.desc}</td>
+    <td style="text-align:center;">&#9632;</td>
+    <td style="text-align:center;"></td>
+  </tr>`).join('')}
+</table>
+
+<!-- CALIFICACIÓN -->
+<table class="blk">
+  <tr><td colspan="3" class="hd">CALIFICA MI SERVICIO (Marque con una X)</td></tr>
+  <tr>
+    <td style="text-align:center;width:33%;font-size:9pt;">😊 Excelente ${chk('Excelente',[s.calificacion])}</td>
+    <td style="text-align:center;width:33%;font-size:9pt;">😐 Bueno ${chk('Bueno',[s.calificacion])}</td>
+    <td style="text-align:center;width:34%;font-size:9pt;">😞 Malo ${chk('Malo',[s.calificacion])}</td>
+  </tr>
+</table>
+
+<!-- CONSTANCIA -->
+<table class="blk">
+  <tr><td colspan="6" class="hd">CONSTANCIA DE ASISTENCIA REALIZADA</td></tr>
+  <tr>
+    <th style="font-size:7pt;">Datos</th><th style="font-size:7pt;">Contratista</th>
+    <th style="font-size:7pt;">Cédula</th><th style="font-size:7pt;">Hora entrada</th>
+    <th style="font-size:7pt;">Hora salida</th><th style="font-size:7pt;">Funcionario de la tienda</th>
+  </tr>
+  <tr>
+    <td style="font-size:7pt;">Técnico</td>
+    <td style="font-family:'Meddon',cursive;font-size:12pt;">${s.tecnico||''}</td>
+    <td style="font-size:7pt;">${s.tecnicoCedula||''}</td>
+    <td style="font-size:7pt;">${s.horaEntrada||''}</td>
+    <td style="font-size:7pt;">${s.horaSalida||''}</td>
+    <td style="font-size:7pt;">Nombre: ${s.funcNombre||''}<br>Teléfono: ${s.funcTel||''}<br>Cargo: ${s.funcCargo||''}</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="text-align:center;padding:6px;height:70px;vertical-align:bottom;">
+      ${s.firmaJefe ? `<img src="${s.firmaJefe}" style="max-height:55px;">` : '<div style="height:40px;border-top:1px solid #000;margin-top:4px;"></div>'}
+      <div style="font-size:7pt;font-weight:700;margin-top:2px;">Firma Funcionario Tienda</div>
+    </td>
+    <td colspan="3" style="text-align:center;padding:6px;height:70px;vertical-align:middle;">
+      ${selloHtml}
+    </td>
+  </tr>
+</table>
+
+${s.fotos?.length ? `
+<table class="blk" style="margin-top:-2px;">
+  <tr><td colspan="2" class="hd">EVIDENCIAS FOTOGRÁFICAS</td></tr>
+  <tr>
+    <td style="width:50%;text-align:center;font-weight:700;font-size:7pt;">ANTES</td>
+    <td style="width:50%;text-align:center;font-weight:700;font-size:7pt;">DESPUÉS</td>
+  </tr>
+  <tr>
+    <td style="height:180px;text-align:center;vertical-align:middle;">${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:175px;">`:'&nbsp;'}</td>
+    <td style="height:180px;text-align:center;vertical-align:middle;">${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:175px;">`:'&nbsp;'}</td>
+  </tr>
+</table>` : ''}
+
+<div style="color:#c0392b;font-size:5.5pt;text-align:center;margin-top:6px;font-style:italic;">
+  Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones y enmendados; este documento debe entregarse diligenciado en su totalidad de lo contrario no será válido.
+</div>
+</body></html>`;
+
+    toast('⏳ Generando PDF...');
+    try {
+        if (!window.html2canvas) await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+        if (!window.jspdf)      await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+        await new Promise(r=>setTimeout(r,300));
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText='position:fixed;left:-9999px;top:0;width:794px;height:1200px;border:none;';
+        document.body.appendChild(iframe);
+        iframe.contentDocument.open(); iframe.contentDocument.write(html); iframe.contentDocument.close();
+        await document.fonts.ready;
+        await new Promise(r=>setTimeout(r,1200));
+        const canvas = await window.html2canvas(iframe.contentDocument.body,{scale:2.5,backgroundColor:'#fff',useCORS:true,allowTaint:true,logging:false,windowWidth:794});
+        document.body.removeChild(iframe);
+        const {jsPDF} = window.jspdf;
+        const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+        pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,210,(canvas.height*210)/canvas.width);
+        pdf.save(`OT_${s.idMtto||s.equipoId}_${s.tiendaCodigo||''}.pdf`);
+        toast('✅ PDF descargado');
+    } catch(err) {
+        const blob = new Blob([html],{type:'text/html;charset=utf-8'});
+        const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+        a.download=`OT_${s.idMtto||''}.html`; a.click();
+        toast('⚠️ PDF falló — descargado como HTML');
+    }
+}
+
+function modalActaD1(eid) {
     if (!sesionActual) { toast('🔑 Debes iniciar sesión primero'); return; }
     const e = getEq(eid);
     if (!e) { toast('❌ Equipo no encontrado'); return; }
@@ -1040,10 +1511,63 @@ function modalEditarCliente(cid){ const c=getCl(cid); showModal(`<div class="mod
 async function actualizarCliente(cid){ try{ await updateDoc(doc(db,'empresas',cid),{ nombre:document.getElementById('eNombre').value, telefono:document.getElementById('eTel').value, email:document.getElementById('eEmail').value, ciudad:document.getElementById('eCiudad').value, direccion:document.getElementById('eDir').value }); closeModal(); await cargarDatos(); toast('✅ Cliente actualizado'); }catch(err){ toast('❌ Error: '+err.message); } }
 function modalEliminarCliente(cid){ if(!confirm('¿Eliminar este cliente y todos sus activos/servicios?')) return; eliminarCliente(cid); }
 async function eliminarCliente(cid){ const eids=getEquiposCliente(cid).map(e=>e.id); try{ for(const eid of eids){ const ss=getServiciosEquipo(eid); for(const s of ss) await deleteDoc(doc(db,'servicios',s.id)); await deleteDoc(doc(db,'equipos',eid)); } await deleteDoc(doc(db,'empresas',cid)); await cargarDatos(); goTo('clientes'); toast('🗑️ Cliente eliminado'); }catch(err){ toast('❌ Error: '+err.message); } }
-function modalNuevoEquipo(cid){ showModal(`<div class="modal"><div class="modal-h"><h3>Nuevo activo</h3><button class="xbtn" onclick="closeModal()">✕</button></div><div class="modal-b"><div class="fr"><div><label class="fl">Marca *</label><input class="fi" id="qMarca"></div><div><label class="fl">Modelo *</label><input class="fi" id="qModelo"></div></div><label class="fl">Serie</label><input class="fi" id="qSerie"><label class="fl">Ubicacion *</label><input class="fi" id="qUbic"><label class="fl">Tipo</label><input class="fi" id="qTipo"><div class="modal-foot"><button class="btn btn-gray" onclick="closeModal()">Cancelar</button><button class="btn btn-blue" onclick="guardarEquipo('${cid}')">Guardar</button></div></div></div>`); }
-async function guardarEquipo(cid){ const m=document.getElementById('qMarca')?.value?.trim(); const mo=document.getElementById('qModelo')?.value?.trim(); const u=document.getElementById('qUbic')?.value?.trim(); if(!m||!mo||!u){ toast('⚠️ Complete marca, modelo y ubicacion'); return; } try{ await addDoc(collection(db,'equipos'),{ clienteId:cid, marca:m, modelo:mo, serie:document.getElementById('qSerie')?.value||'', ubicacion:u, tipo:document.getElementById('qTipo')?.value||'' }); closeModal(); await cargarDatos(); toast('✅ Activo guardado'); }catch(err){ toast('❌ Error: '+err.message); } }
-function modalEditarEquipo(eid){ const eq=getEq(eid); if(!eq) return; showModal(`<div class="modal"><div class="modal-h"><h3>Editar activo</h3><button class="xbtn" onclick="closeModal()">✕</button></div><div class="modal-b"><div class="fr"><div><label class="fl">Marca</label><input class="fi" id="eMarca" value="${eq.marca}"></div><div><label class="fl">Modelo</label><input class="fi" id="eModelo" value="${eq.modelo}"></div></div><label class="fl">Serie</label><input class="fi" id="eSerie" value="${eq.serie||''}"><label class="fl">Ubicacion</label><input class="fi" id="eUbic" value="${eq.ubicacion}"><label class="fl">Tipo</label><input class="fi" id="eTipoEq" value="${eq.tipo||''}"><div class="modal-foot"><button class="btn btn-gray" onclick="closeModal()">Cancelar</button><button class="btn btn-blue" onclick="actualizarEquipo('${eid}')">Guardar</button></div></div></div>`); }
-async function actualizarEquipo(eid){ try{ await updateDoc(doc(db,'equipos',eid),{ marca:document.getElementById('eMarca').value, modelo:document.getElementById('eModelo').value, serie:document.getElementById('eSerie').value, ubicacion:document.getElementById('eUbic').value, tipo:document.getElementById('eTipoEq').value }); closeModal(); await cargarDatos(); toast('✅ Activo actualizado'); }catch(err){ toast('❌ Error: '+err.message); } }
+function modalNuevoEquipo(cid, tid){
+    tid = tid || selectedTiendaId;
+    showModal(`<div class="modal">
+      <div class="modal-h" style="background:#1a1a1a;"><h3 style="color:#C9A84C;">Nuevo activo</h3><button class="xbtn" style="color:white;" onclick="closeModal()">✕</button></div>
+      <div class="modal-b">
+        <label class="fl">Nombre del activo ★</label>
+        <input class="fi" id="aActNombre" placeholder="Cubierta, Pared, Luminaria, Rampa, Puerta...">
+        <label class="fl">Descripción</label>
+        <input class="fi" id="aActDesc" placeholder="Detalle: Pared zona bodega, Puerta principal...">
+        <div class="modal-foot">
+          <button class="btn btn-gray" onclick="closeModal()">Cancelar</button>
+          <button class="btn" style="background:#C9A84C;color:#1a1a1a;font-weight:700;" onclick="guardarEquipo('${cid}','${tid}')">Guardar</button>
+        </div>
+      </div>
+    </div>`);
+}
+async function guardarEquipo(cid, tid){
+    const nombre = document.getElementById('aActNombre')?.value?.trim();
+    if (!nombre){ toast('⚠️ Nombre del activo requerido'); return; }
+    try{
+        await addDoc(collection(db,'equipos'),{
+            clienteId: cid,
+            tiendaId:  tid || selectedTiendaId || '',
+            nombre:    nombre,
+            descripcion: document.getElementById('aActDesc')?.value?.trim()||'',
+            creadoEn:  new Date().toISOString()
+        });
+        closeModal(); await cargarDatos(); toast('✅ Activo guardado');
+    }catch(err){ toast('❌ Error: '+err.message); }
+}
+function modalEditarEquipo(eid){
+    const eq=getEq(eid); if(!eq) return;
+    showModal(`<div class="modal">
+      <div class="modal-h" style="background:#1a1a1a;"><h3 style="color:#C9A84C;">Editar activo</h3><button class="xbtn" style="color:white;" onclick="closeModal()">✕</button></div>
+      <div class="modal-b">
+        <label class="fl">Nombre del activo ★</label>
+        <input class="fi" id="aActNombre" value="${eq.nombre||eq.tipo||eq.marca||''}">
+        <label class="fl">Descripción</label>
+        <input class="fi" id="aActDesc" value="${eq.descripcion||eq.ubicacion||''}">
+        <div class="modal-foot">
+          <button class="btn btn-gray" onclick="closeModal()">Cancelar</button>
+          <button class="btn" style="background:#C9A84C;color:#1a1a1a;font-weight:700;" onclick="actualizarEquipo('${eid}')">Guardar</button>
+        </div>
+      </div>
+    </div>`);
+}
+async function actualizarEquipo(eid){
+    const nombre = document.getElementById('aActNombre')?.value?.trim();
+    if(!nombre){ toast('⚠️ Nombre requerido'); return; }
+    try{
+        await updateDoc(doc(db,'equipos',eid),{
+            nombre:      nombre,
+            descripcion: document.getElementById('aActDesc')?.value?.trim()||''
+        });
+        closeModal(); await cargarDatos(); toast('✅ Activo actualizado');
+    }catch(err){ toast('❌ Error: '+err.message); }
+}
 function modalEliminarEquipo(eid){ if(!confirm('¿Eliminar este activo y sus servicios?')) return; eliminarEquipo(eid); }
 async function eliminarEquipo(eid){ const ss=getServiciosEquipo(eid); try{ for(const s of ss) await deleteDoc(doc(db,'servicios',s.id)); await deleteDoc(doc(db,'equipos',eid)); await cargarDatos(); toast('🗑️ Activo eliminado'); }catch(err){ toast('❌ Error: '+err.message); } }
 function modalNuevoTecnico(){ showModal(`<div class="modal"><div class="modal-h"><h3>Nuevo tecnico</h3><button class="xbtn" onclick="closeModal()">✕</button></div><div class="modal-b"><label class="fl">Nombre *</label><input class="fi" id="tNombre"><div class="fr"><div><label class="fl">Tipo Doc</label><select class="fi" id="tTipoDoc">${TIPOS_DOC.map(d=>`<option>${d}</option>`).join('')}</select></div><div><label class="fl">Cedula *</label><input class="fi" id="tCedula" type="number"></div></div><label class="fl">Telefono</label><input class="fi" id="tTel"><label class="fl">Cargo</label><input class="fi" id="tCargo"><label class="fl">Rol</label><select class="fi" id="tRol"><option value="tecnico">Tecnico</option><option value="admin">Admin</option></select><label class="fl">Clave (4 digitos) *</label><input class="fi" id="tClave" type="password" maxlength="4"><div class="modal-foot"><button class="btn btn-gray" onclick="closeModal()">Cancelar</button><button class="btn btn-blue" onclick="guardarTecnico()">Guardar</button></div></div></div>`); }
@@ -1290,6 +1814,136 @@ window.goTo=goTo; window.closeModal=closeModal; window.filtrarClientes=filtrarCl
 window.descargarHistorialCliente=descargarHistorialCliente; window.obtenerGPS=obtenerGPS; window.modalInformeJMC=modalInformeJMC; window.modalInformeRO=modalInformeRO; window.actualizarServicioD1=actualizarServicioD1; window.exportarActaD1=exportarActaD1;
 
 // ============================================
+// ============================================
+// QR APROBACIÓN — JEFE DE TIENDA
+// ============================================
+async function generarQRAprobacion(sid) {
+    const token  = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const expira = new Date(Date.now() + 30*60*1000).toISOString();
+    try {
+        await setDoc(doc(db,'aprobaciones',token), {
+            servicioId: sid, expira, usado: false,
+            creadoEn: new Date().toISOString()
+        });
+        const url = `${location.origin}${location.pathname}#/aprobar/${token}`;
+        showModal(`<div class="modal" style="max-width:340px;">
+          <div class="modal-h" style="background:#1a1a1a;border-bottom:2px solid #C9A84C;">
+            <h3 style="color:#C9A84C;">📱 QR para jefe de tienda</h3>
+            <button class="xbtn" style="color:white;" onclick="closeModal()">✕</button>
+          </div>
+          <div class="modal-b" style="text-align:center;">
+            <div style="font-size:.78rem;color:#555;margin-bottom:.75rem;">Muestra este QR al jefe de tienda para que firme desde su celular</div>
+            <div id="qrAprobRender" style="display:inline-block;margin-bottom:.5rem;"></div>
+            <div style="font-size:.68rem;color:#94a3b8;margin-bottom:.75rem;">Expira en 30 minutos · Un solo uso</div>
+            <div class="modal-foot"><button class="btn btn-gray" onclick="closeModal()">Cerrar</button></div>
+          </div>
+        </div>`);
+        if (window.QRCode) {
+            new QRCode(document.getElementById('qrAprobRender'), { text: url, width: 220, height: 220 });
+        } else {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+            s.onload = () => new QRCode(document.getElementById('qrAprobRender'), { text: url, width: 220, height: 220 });
+            document.head.appendChild(s);
+        }
+    } catch(e) { toast('⚠️ Error generando QR: ' + e.message); }
+}
+
+function manejarRutaAprobacion() {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#/aprobar/')) return false;
+    const token = hash.replace('#/aprobar/', '');
+    const main  = document.getElementById('mainContent');
+    const topbar = document.querySelector('.topbar');
+    const botnav = document.querySelector('.botnav');
+    if (topbar) topbar.style.display = 'none';
+    if (botnav) botnav.style.display = 'none';
+    main.innerHTML = `
+      <div style="max-width:420px;margin:0 auto;padding:1rem;">
+        <div style="background:#1a1a1a;color:white;border-radius:12px;padding:14px;margin-bottom:12px;border-bottom:3px solid #C9A84C;text-align:center;">
+          <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" style="height:40px;margin-bottom:8px;" onerror="this.style.display='none'">
+          <div style="color:#C9A84C;font-weight:700;">Aprobación de servicio</div>
+        </div>
+        <div id="qrAprobContenido">
+          <div style="text-align:center;padding:2rem;color:#94a3b8;">Cargando...</div>
+        </div>
+      </div>`;
+    cargarAprobacionQR(token);
+    return true;
+}
+
+async function cargarAprobacionQR(token) {
+    const cont = document.getElementById('qrAprobContenido');
+    try {
+        const snap = await getDoc(doc(db,'aprobaciones',token));
+        if (!snap.exists()) { cont.innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:1rem;border-radius:8px;">❌ Link inválido o expirado</div>'; return; }
+        const data = snap.data();
+        if (data.usado) { cont.innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:1rem;border-radius:8px;">❌ Este link ya fue utilizado</div>'; return; }
+        if (new Date(data.expira) < new Date()) { cont.innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:1rem;border-radius:8px;">❌ Este link expiró</div>'; return; }
+        const sSnap = await getDoc(doc(db,'servicios',data.servicioId));
+        if (!sSnap.exists()) { cont.innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:1rem;border-radius:8px;">❌ Servicio no encontrado</div>'; return; }
+        const s = { id: sSnap.id, ...sSnap.data() };
+        cont.innerHTML = `
+          <div style="background:white;border-radius:10px;padding:12px;border:1px solid #e0e0e0;margin-bottom:12px;">
+            <div style="font-weight:700;font-size:.9rem;margin-bottom:6px;color:#C9A84C;">📋 Orden ${s.idMtto||'—'}</div>
+            <div style="font-size:.78rem;color:#555;">🏪 ${s.tiendaNombre||s.tiendaCodigo||'—'}</div>
+            <div style="font-size:.78rem;color:#555;">📅 ${s.fecha||''}</div>
+            <div style="font-size:.78rem;color:#555;">🔧 ${s.tecnico||'—'}</div>
+            <div style="font-size:.78rem;color:#555;margin-top:4px;">${(s.actividades||'').slice(0,120)}</div>
+          </div>
+          <div style="background:white;border-radius:10px;padding:12px;border:1px solid #e0e0e0;margin-bottom:12px;">
+            <label style="display:block;font-size:.7rem;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:4px;">Tu número de celular</label>
+            <input id="qrJefeCel" type="tel" placeholder="3XX XXX XXXX" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:.5rem .75rem;font-size:.9rem;margin-bottom:10px;">
+            <label style="display:block;font-size:.7rem;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:4px;">Tu firma</label>
+            <canvas id="firmaJefeCanvas" style="width:100%;height:110px;border:2px dashed #e0e0e0;border-radius:8px;background:white;touch-action:none;display:block;"></canvas>
+            <button onclick="document.getElementById('firmaJefeCanvas').getContext('2d').clearRect(0,0,1000,300)" style="background:none;border:1px solid #e0e0e0;border-radius:6px;padding:4px 10px;font-size:.72rem;margin-top:4px;cursor:pointer;">Limpiar</button>
+          </div>
+          <div style="font-size:.7rem;color:#94a3b8;margin-bottom:12px;">Al firmar confirmas que el servicio fue realizado a satisfacción. Tu celular, firma y ubicación quedan registrados.</div>
+          <button onclick="confirmarQRAprobacion('${token}','${s.id}')" style="background:#C9A84C;color:#1a1a1a;font-weight:700;border:none;border-radius:10px;padding:.85rem;width:100%;font-size:.95rem;cursor:pointer;">✅ Aprobar y firmar</button>`;
+        setTimeout(() => {
+            const canvas = document.getElementById('firmaJefeCanvas');
+            if (!canvas) return;
+            canvas.width = canvas.offsetWidth || 340;
+            canvas.height = 110;
+            const ctx = canvas.getContext('2d');
+            let drawing = false, lx = 0, ly = 0;
+            const pos = ev => { const r=canvas.getBoundingClientRect(); const s=ev.touches?ev.touches[0]:ev; return [s.clientX-r.left,s.clientY-r.top]; };
+            canvas.addEventListener('mousedown',  e => { drawing=true; [lx,ly]=pos(e); });
+            canvas.addEventListener('mousemove',  e => { if(!drawing) return; const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(x,y); ctx.strokeStyle='#1a1a6e'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.stroke(); [lx,ly]=[x,y]; });
+            canvas.addEventListener('mouseup',    () => drawing=false);
+            canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing=true; [lx,ly]=pos(e); }, {passive:false});
+            canvas.addEventListener('touchmove',  e => { e.preventDefault(); if(!drawing) return; const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(x,y); ctx.strokeStyle='#1a1a6e'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.stroke(); [lx,ly]=[x,y]; }, {passive:false});
+            canvas.addEventListener('touchend',   () => drawing=false);
+        }, 100);
+    } catch(e) {
+        cont.innerHTML = `<div style="background:#fee2e2;color:#991b1b;padding:1rem;border-radius:8px;">⚠️ Error: ${e.message}</div>`;
+    }
+}
+
+async function confirmarQRAprobacion(token, sid) {
+    const cel    = document.getElementById('qrJefeCel')?.value?.trim();
+    const canvas = document.getElementById('firmaJefeCanvas');
+    if (!cel) { alert('⚠️ Ingresa tu número de celular'); return; }
+    const firma = canvas ? canvas.toDataURL('image/png') : '';
+    let gps = null;
+    try { gps = await new Promise(res => navigator.geolocation.getCurrentPosition(p => res({lat:p.coords.latitude,lng:p.coords.longitude}), () => res(null), {timeout:5000})); } catch(e) {}
+    try {
+        await updateDoc(doc(db,'servicios',sid), {
+            aprobado: true, pendienteAprobacion: false,
+            aprobadoEn: new Date().toISOString(),
+            firmaJefeQR: firma, celularJefe: cel,
+            gpsJefe: gps, userAgentJefe: navigator.userAgent
+        });
+        await updateDoc(doc(db,'aprobaciones',token), { usado: true });
+        document.getElementById('qrAprobContenido').innerHTML = `
+          <div style="text-align:center;padding:2rem;">
+            <div style="font-size:3rem;margin-bottom:.75rem;">✅</div>
+            <div style="font-weight:700;font-size:1.1rem;color:#16a34a;">¡Aprobado!</div>
+            <div style="font-size:.82rem;color:#555;margin-top:.35rem;">Orden cerrada correctamente</div>
+          </div>`;
+    } catch(e) { alert('⚠️ Error al aprobar: ' + e.message); }
+}
+
 // QR TIENDA — FICHA PÚBLICA
 // ============================================
 function modalQRTienda(tid) {
@@ -1332,10 +1986,10 @@ function manejarRutaTienda() {
     if (botnav) botnav.style.display = 'none';
     document.getElementById('mainContent').innerHTML = `
         <div style="max-width:600px;margin:0 auto;padding:1rem;">
-            <div style="background:var(--negro);color:white;border-radius:12px;padding:16px;margin-bottom:12px;border-bottom:3px solid var(--dorado);">
+            <div style="background:#1a1a1a;color:white;border-radius:12px;padding:16px;margin-bottom:12px;border-bottom:3px solid #C9A84C;">
                 <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" style="height:32px;margin-bottom:8px;" onerror="this.style.display='none'">
-                <div style="font-size:1.1rem;font-weight:700;color:var(--dorado);">${t.nombre}</div>
-                <div style="font-size:.78rem;opacity:.7;">${t.municipio}, ${t.departamento}</div>
+                <div style="font-size:1.1rem;font-weight:700;color:#C9A84C;">${t.nombre}</div>
+                <div style="font-size:.78rem;color:rgba(255,255,255,.7);">${t.municipio}, ${t.departamento}</div>
                 <div style="font-size:.78rem;opacity:.7;">Código: ${t.codigo}</div>
                 ${t.latitud ? `<a href="https://maps.google.com/?q=${t.latitud},${t.longitud}" target="_blank" style="color:var(--dorado);font-size:.76rem;">🗺️ Ver en mapa</a>` : ''}
             </div>
@@ -1368,6 +2022,13 @@ function manejarRutaTienda() {
 }
 
 window.modalQRTienda = modalQRTienda;
+window.generarQRAprobacion = generarQRAprobacion;
+window.confirmarQRAprobacion = confirmarQRAprobacion;
+window.modalNuevaIncidencia = modalNuevaIncidencia;
+window.guardarIncidencia = guardarIncidencia;
+window.autocompletarTienda = autocompletarTienda;
+window.previewFotoOT = window.previewFotoOT;
+window.limpiarFirmaOT = window.limpiarFirmaOT;
 window.filtrarTiendasDetalle = filtrarTiendasDetalle;
 window.descargarHistorialTienda = descargarHistorialTienda;
 window.imprimirQRTienda = imprimirQRTienda;
