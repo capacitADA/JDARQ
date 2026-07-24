@@ -1247,29 +1247,6 @@ function generarInformePDF(eid) {
 
 
 
-function modalQRTienda(tid) {
-    const t = getTienda(tid);
-    if (!t) return;
-    const url = `${location.origin}${location.pathname}#/tienda/${tid}`;
-    showModal(`<div class="modal" style="max-width:340px;">
-      <div class="modal-h"><h3>📱 QR Tienda</h3><button class="xbtn" onclick="closeModal()">✕</button></div>
-      <div class="modal-b" style="text-align:center;">
-        <div style="font-weight:700;margin-bottom:.25rem;">${t.nombre}</div>
-        <div style="font-size:.76rem;color:#555;margin-bottom:.75rem;">Código: ${t.codigo} · ${t.municipio}</div>
-        <div id="qrTiendaRender"></div>
-        <div style="font-size:.68rem;color:var(--hint);margin-top:.5rem;">Escanea para ver activos e historial de la tienda</div>
-        <div class="modal-foot">
-          <button class="btn btn-gray" onclick="closeModal()">Cerrar</button>
-          <button class="btn btn-gold" onclick="imprimirQRTienda('${url}','${t.nombre}')">🖨️ Imprimir</button>
-        </div>
-      </div>
-    </div>`);
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
-    script.onload = () => new QRCode(document.getElementById('qrTiendaRender'), { text: url, width: 200, height: 200 });
-    document.head.appendChild(script);
-    if (window.QRCode) new QRCode(document.getElementById('qrTiendaRender'), { text: url, width: 200, height: 200 });
-}
 
 window.imprimirQRTienda = (url, nombre) => {
     const w = window.open('', '_blank');
