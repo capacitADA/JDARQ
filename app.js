@@ -1260,55 +1260,6 @@ window.imprimirQRTienda = (url, nombre) => {
     </body></html>`);
 };
 
-function manejarRutaTienda() {
-    const hash = window.location.hash;
-    if (!hash.startsWith('#/tienda/')) return false;
-    const tid = hash.replace('#/tienda/', '');
-    const t   = getTienda(tid);
-    if (!t) return false;
-    const main   = document.getElementById('mainContent');
-    const topbar = document.querySelector('.topbar');
-    const botnav = document.querySelector('.botnav');
-    if (topbar) topbar.style.display = 'none';
-    if (botnav) botnav.style.display = 'none';
-    const eqs = getEquiposTienda(tid);
-    const totalInc = eqs.reduce((n, e) => n + getServiciosEquipo(e.id).length, 0);
-    main.innerHTML = `
-    <div style="max-width:600px;margin:0 auto;padding:1rem;">
-      <div style="background:var(--negro,#1a1a1a);color:white;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">
-        <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" style="height:40px;" onerror="this.style.display='none'">
-        <div>
-          <div style="font-size:.72rem;opacity:.6;">JD Arquisoluciones S.A.S</div>
-          <div style="font-weight:700;font-size:1rem;">${t.nombre}</div>
-          <div style="font-size:.78rem;opacity:.8;">📍 ${t.municipio||''}, ${t.departamento||''} · Cód: ${t.codigo}</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="background:white;border-radius:10px;padding:12px;text-align:center;border:1px solid #e0e0e0;">
-          <div style="font-size:1.8rem;font-weight:800;color:#C9A84C;">${eqs.length}</div>
-          <div style="font-size:.72rem;color:#666;">Activos registrados</div>
-        </div>
-        <div style="background:white;border-radius:10px;padding:12px;text-align:center;border:1px solid #e0e0e0;">
-          <div style="font-size:1.8rem;font-weight:800;color:#1a1a1a;">${totalInc}</div>
-          <div style="font-size:.72rem;color:#666;">Incidencias históricas</div>
-        </div>
-      </div>
-      ${t.latitud ? `<div style="margin-bottom:12px;"><a href="https://maps.google.com/?q=${t.latitud},${t.longitud}" target="_blank" style="background:#4285f4;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:.82rem;">🗺️ Ver en Google Maps</a></div>` : ''}
-      <div style="font-weight:700;font-size:.85rem;margin-bottom:8px;">Activos (${eqs.length})</div>
-      ${eqs.map(e => {
-        const inc = getServiciosEquipo(e.id);
-        const ultima = inc[0];
-        return `<div style="background:white;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #e0e0e0;">
-          <div style="font-weight:700;">${e.nombre||e.tipo||'Activo'}</div>
-          <div style="font-size:.76rem;color:#555;">${e.area||''} ${e.ubicacion?'· '+e.ubicacion:''}</div>
-          <div style="font-size:.76rem;color:${e.estado==='Operativo'?'#16a34a':'#dc2626'};font-weight:700;">● ${e.estado||'Sin estado'}</div>
-          <div style="font-size:.72rem;color:#888;margin-top:4px;">${inc.length} incidencia(s) ${ultima?'· Última: '+fmtFecha(ultima.fecha):''}</div>
-        </div>`;
-      }).join('')}
-      ${eqs.length === 0 ? '<div style="color:#aaa;font-size:.82rem;text-align:center;padding:1rem;">Sin activos registrados</div>' : ''}
-    </div>`;
-    return true;
-}
 
 function manejarRutaQR() { const hash = window.location.hash; if (!hash.startsWith('#/equipo/')) return false; const eid = hash.replace('#/equipo/', ''); const e = getEq(eid); if (!e) return false; const c = getCl(e.clienteId); const esD1 = esClienteD1(e.clienteId); const tienda = esD1 ? getTiendaD1(e?.idTienda) : null; const main = document.getElementById('mainContent'); const topbar = document.querySelector('.topbar'); const botnav = document.querySelector('.botnav'); if (topbar) topbar.style.display = 'none'; if (botnav) botnav.style.display = 'none'; main.style.background = 'white'; const ss = getServiciosEquipo(eid).sort((a,b) => new Date(b.fecha)-new Date(a.fecha)); const waMsg = encodeURIComponent('Hola KRYOTEC, necesito ayuda con el ' + (e?.tipo||'') + ' ' + (e?.marca||'') + ' ' + (e?.modelo||'') + ' ubicado en ' + (e?.ubicacion||'') + ', pueden contactarme por favor'); const waUrl = 'https://wa.me/573105533937?text=' + waMsg; let html = ''; if (esD1 && tienda) { html = `<div style="max-width:600px;margin:0 auto;padding:1rem;"><div style="background:#0c214a;color:white;border-radius:12px;padding:16px;margin-bottom:12px;"><div style="font-weight:700;">JD Arquisoluciones S.A.S</div><div style="font-size:1.2rem;font-weight:700;">${e?.tipo || 'Equipo'} ${e?.marca || ''} ${e?.modelo || ''}</div><div>${tienda.tienda || e?.ubicacion || ''}</div></div><div style="background:white;border:1px solid #ccc;border-radius:12px;padding:12px;"><div style="font-weight:700;">🔧 DATOS TÉCNICOS</div><table style="width:100%;"><tr><td>Marca/Modelo</td><td>${e?.marca || ''} ${e?.modelo || ''}</td></tr><tr><td>Serie</td><td>${e?.serie || 'N/A'}</td></tr></table></div><div style="background:#25D366;border-radius:12px;padding:12px;text-align:center;margin-top:12px;"><a href="${waUrl}" target="_blank" style="color:white;text-decoration:none;font-weight:700;">📱 Contactar por WhatsApp</a></div>${sesionActual ? `<button onclick="modalActaD1('${eid}')" class="btn-d1-nuevo" style="background:#e4002b;color:white;width:100%;padding:12px;margin-top:12px;border-radius:12px;">📋 Nuevo servicio D1</button>` : `<div style="background:#fef2f2;padding:12px;margin-top:12px;text-align:center;"><button onclick="mostrarLoginQR('${eid}')" class="btn btn-blue">Iniciar sesión</button></div>`}<h3>Historial (${ss.length})</h3>${ss.map(s => `<div style="border:1px solid #ccc;padding:8px;margin-top:8px;"><div>${fmtFecha(s.fecha)} - ${s.tipo}</div><div>${s.descripcion}</div></div>`).join('')}</div>`; } else { html = `<div style="max-width:600px;margin:0 auto;padding:1rem;"><div style="background:#0c214a;color:white;border-radius:12px;padding:16px;"><div>JD Arquisoluciones S.A.S</div><div>${e?.tipo || ''} ${e?.marca || ''} ${e?.modelo || ''}</div><div>${e?.ubicacion || ''}</div></div><div style="background:#25D366;border-radius:12px;padding:12px;text-align:center;margin-top:12px;"><a href="${waUrl}" target="_blank" style="color:white;text-decoration:none;">📱 Contactar por WhatsApp</a></div><h3>Historial (${ss.length})</h3>${ss.map(s => `<div style="border:1px solid #ccc;padding:8px;margin-top:8px;"><div>${fmtFecha(s.fecha)} - ${s.tipo}</div><div>${s.descripcion}</div></div>`).join('')}</div>`; } main.innerHTML = html; return true; }
 window.mostrarLoginQR = async (eid) => { const tecnicosList = tecnicos.filter(t => t.rol === 'tecnico' || t.rol === 'admin'); if (tecnicosList.length === 0) { toast('⚠️ No hay técnicos registrados'); return; } let options = '<option value="">Seleccionar técnico</option>'; tecnicosList.forEach(t => { options += `<option value="${t.id}">${t.nombre}</option>`; }); showModal(`<div class="modal" style="max-width:320px;"><div class="modal-h"><h3>🔐 Iniciar sesión</h3><button class="xbtn" onclick="closeModal()">✕</button></div><div class="modal-b"><label class="fl">Técnico</label><select class="fi" id="qrLoginTecnico">${options}</select><label class="fl">Clave (4 dígitos)</label><input class="fi" type="password" id="qrLoginClave" maxlength="4"><div class="modal-foot"><button class="btn btn-gray" onclick="closeModal()">Cancelar</button><button class="btn btn-blue" onclick="ejecutarLoginQR('${eid}')">Ingresar</button></div></div></div>`); };
