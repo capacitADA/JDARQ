@@ -1367,4 +1367,8 @@ function manejarRutaTienda() {
     return true;
 }
 
+window.modalQRTienda = modalQRTienda;
+window.filtrarTiendasDetalle = filtrarTiendasDetalle;
+window.descargarHistorialTienda = descargarHistorialTienda;
+window.imprimirQRTienda = imprimirQRTienda;
 (async()=>{ await conectarDriveAuto(); await cargarDatos(); if(!manejarRutaQR() && !manejarRutaTienda()) renderView(); })();
