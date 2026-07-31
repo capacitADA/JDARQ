@@ -384,9 +384,9 @@ async function cargarTodo() {
     const aprobadas = sSnap.docs.filter(d=>d.data().aprobado).length;
 
     renderTiendas(); renderClientes(); renderTecnicos();
-    poblarFiltroDep();
-    renderTiendasActivos();
-    renderActivosCheck();
+    if(typeof poblarFiltroDep==='function') poblarFiltroDep();
+    if(typeof renderTiendasActivos==='function') renderTiendasActivos();
+    if(typeof renderActivosCheck==='function') renderActivosCheck();
 
     document.getElementById('bdClientes').textContent  = clientes.length;
     document.getElementById('bdTiendas').textContent   = tiendas.length;
