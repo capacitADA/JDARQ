@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JDARQ — Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --negro:#1a1a1a;--dorado:#C9A84C;--dorado-d:#a8863a;
+  --rojo:#c0392b;--bg:#f4f4f4;--white:#fff;
+  --border:#e0e0e0;--radius:10px;--shadow:0 2px 10px rgba(0,0,0,.10);
+  --texto:#222;--suave:#666;--hint:#94a3b8;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--texto);}
+
+.topbar{background:var(--negro);padding:.75rem 1.25rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--dorado);}
+.topbar-marca{display:flex;align-items:center;gap:.65rem;}
+.topbar-marca img{height:36px;object-fit:contain;}
+.topbar-marca-txt .title{color:var(--dorado);font-weight:800;font-size:1rem;}
+.topbar-marca-txt .sub{color:rgba(255,255,255,.4);font-size:.68rem;}
+.topbar-user{color:rgba(255,255,255,.5);font-size:.76rem;}
+
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 64px);padding:1rem;}
+.login-card{background:var(--white);border-radius:16px;padding:2rem;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.15);border-top:4px solid var(--dorado);}
+.login-card h2{font-size:1rem;font-weight:700;margin-bottom:1.25rem;text-align:center;color:var(--negro);}
+
+#appScreen{display:none;padding:1rem;max-width:860px;margin:0 auto;}
+
+.tabs{display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap;border-bottom:2px solid var(--border);padding-bottom:.75rem;}
+.tab{padding:.45rem 1rem;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;color:var(--suave);}
+.tab.active{background:var(--negro);color:var(--dorado);border-color:var(--negro);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+.card{background:var(--white);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;border:1px solid var(--border);box-shadow:var(--shadow);}
+.card h3{font-size:.9rem;font-weight:700;margin-bottom:.75rem;color:var(--negro);}
+
+.fl{display:block;font-size:.7rem;font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.05em;margin:.65rem 0 .25rem;}
+.fi{width:100%;border:1.5px solid var(--border);border-radius:var(--radius);padding:.55rem .8rem;font-size:.88rem;background:var(--bg);outline:none;transition:border-color .2s;color:var(--texto);}
+.fi:focus{border-color:var(--dorado);background:var(--white);}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.65rem;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:var(--radius);font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn-gold{background:var(--dorado);color:var(--negro);}
+.btn-gold:hover{background:var(--dorado-d);}
+.btn-dark{background:var(--negro);color:var(--dorado);}
+.btn-dark:hover{background:#333;}
+.btn-red{background:var(--rojo);color:white;}
+.btn-gray{background:#e0e0e0;color:#444;}
+.btn-green{background:#16a34a;color:white;}
+.btn-full{width:100%;margin-top:.5rem;}
+.btn-sm{font-size:.76rem;padding:.35rem .75rem;}
+
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);}
+.drop-zone:hover,.drop-zone.over{border-color:var(--dorado);background:#fffbeb;}
+.drop-zone .icon{font-size:2rem;margin-bottom:.5rem;}
+.drop-zone p{font-size:.82rem;color:var(--suave);}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem;}
+.stat{background:var(--white);border-radius:var(--radius);padding:.85rem;text-align:center;border:1px solid var(--border);}
+.stat-num{font-size:1.5rem;font-weight:800;color:var(--dorado);}
+.stat-lbl{font-size:.68rem;color:var(--suave);text-transform:uppercase;margin-top:.15rem;}
+
+.tbl-wrap{overflow-x:auto;margin-top:.75rem;}
+table{width:100%;border-collapse:collapse;font-size:.76rem;}
+th{background:var(--negro);color:var(--dorado);padding:6px 8px;text-align:left;font-weight:700;font-size:.68rem;white-space:nowrap;}
+td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:var(--bg);}
+
+.badge{font-size:.65rem;font-weight:700;padding:.15rem .5rem;border-radius:20px;display:inline-block;}
+.b-green{background:#dcfce7;color:#15803d;}
+.b-red{background:#fee2e2;color:#991b1b;}
+.b-gold{background:#fef3c7;color:#92400e;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--negro);color:var(--dorado);border:1px solid var(--dorado);padding:.55rem 1.25rem;border-radius:20px;font-size:.82rem;font-weight:600;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.log{background:#1a1a1a;color:#C9A84C;border-radius:var(--radius);padding:.75rem;font-size:.72rem;font-family:monospace;max-height:180px;overflow-y:auto;margin-top:.75rem;}
+.log .ok{color:#4ade80;}.log .err{color:#f87171;}.log .info{color:#93c5fd;}
+
+.plantilla-box{background:#fffbeb;border:1px solid var(--dorado);border-radius:var(--radius);padding:.85rem;margin-bottom:.75rem;}
+.plantilla-box code{font-size:.72rem;display:block;margin:.35rem 0;color:#555;font-family:monospace;}
+
+.info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius);padding:.75rem;font-size:.78rem;color:#1e40af;margin-bottom:.75rem;}
+.warn-box{background:#fff8f0;border:1.5px solid var(--dorado);border-radius:var(--radius);padding:.75rem;font-size:.78rem;color:#92400e;margin-bottom:.75rem;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-marca">
+    <img src="https://raw.githubusercontent.com/capacitADA/JDARQ/main/JDARQ-logo.png" onerror="this.style.display='none'">
+    <div class="topbar-marca-txt">
+      <div class="title">JDARQ Admin</div>
+      <div class="sub">Panel de administración</div>
+    </div>
+  </div>
+  <div class="topbar-user" id="topbarUser"></div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h2>🔐 Acceso Admin</h2>
+    <label class="fl">Cédula</label>
+    <input class="fi" id="loginCed" type="number" placeholder="Número de cédula">
+    <label class="fl">Clave (4 dígitos)</label>
+    <input class="fi" id="loginClave" type="password" maxlength="4" placeholder="••••">
+    <div id="loginErr" style="display:none;background:#fee2e2;color:#991b1b;border-radius:var(--radius);padding:.5rem .75rem;font-size:.78rem;margin-top:.5rem;"></div>
+    <button class="btn btn-gold btn-full" onclick="login()" style="margin-top:.75rem;">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <div class="tabs">
+    <div class="tab active"  onclick="switchTab('tiendas')">🏪 Tiendas</div>
+    <div class="tab" onclick="switchTab('activos')">🔧 Activos</div>
+    <div class="tab" onclick="switchTab('clientes')">🏢 Clientes</div>
+    <div class="tab" onclick="switchTab('tecnicos')">👷 Técnicos</div>
+    <div class="tab" onclick="switchTab('bd')">🗄️ Base de datos</div>
+  </div>
+
+  <!-- TIENDAS -->
+  <div class="tab-content active" id="tab-tiendas">
+    <div class="card">
+      <h3>📥 Cargar tiendas desde CSV</h3>
+      <div class="plantilla-box">
+        <strong style="font-size:.78rem;">Columnas requeridas:</strong>
+        <code>cliente, codigo, nombre, municipio, departamento, latitud, longitud</code>
+        <strong style="font-size:.78rem;">Ejemplo:</strong>
+        <code>D1,6A1B001,D1 Centro Ibagué,Ibagué,Tolima,4.438889,-75.232222</code>
+        <code>D1,6A1B002,D1 Ambala,Ibagué,Tolima,4.441200,-75.229800</code>
+        <button class="btn btn-dark btn-sm" style="margin-top:.5rem;" onclick="descargarPlantilla()">⬇️ Descargar plantilla CSV</button>
+      </div>
+      <div class="drop-zone" id="dropTiendas"
+           onclick="document.getElementById('fileTiendas').click()"
+           ondragover="dragOver(event,'dropTiendas')"
+           ondragleave="dragLeave('dropTiendas')"
+           ondrop="dropFile(event,'tiendas')">
+        <div class="icon">📂</div>
+        <p>Arrastra el CSV aquí o haz clic para seleccionar</p>
+        <input type="file" id="fileTiendas" accept=".csv" style="display:none" onchange="leerCSV(this,'tiendas')">
+      </div>
+      <div id="previewTiendas"></div>
+    </div>
+
+    <div class="card">
+      <h3>📋 Tiendas registradas</h3>
+      <div class="stats">
+        <div class="stat"><div class="stat-num" id="cntTiendas">—</div><div class="stat-lbl">Tiendas</div></div>
+        <div class="stat"><div class="stat-num" id="cntMunicipios">—</div><div class="stat-lbl">Municipios</div></div>
+        <div class="stat"><div class="stat-num" id="cntClientes">—</div><div class="stat-lbl">Clientes</div></div>
+      </div>
+      <div class="fr" style="margin-bottom:.65rem;">
+        <input class="fi" id="searchTiendas" placeholder="🔍 Buscar tienda..." oninput="filtrarTiendas(this.value)">
+        <select class="fi" id="filtroCliente" onchange="filtrarTiendas(document.getElementById('searchTiendas').value)">
+          <option value="">Todos los clientes</option>
+        </select>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Código</th><th>Nombre</th><th>Municipio</th><th>Departamento</th><th>GPS</th><th></th></tr></thead>
+          <tbody id="tblTiendas"><tr><td colspan="7" style="text-align:center;color:#ccc;padding:1rem;">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVOS MASIVOS -->
+  <div class="tab-content" id="tab-activos">
+    <div class="card">
+      <h3>🔧 Carga masiva de activos por tienda</h3>
+      <p style="font-size:.78rem;color:var(--suave);margin-bottom:.75rem;">
+        Selecciona las tiendas y los activos que aplican. Se creará un documento por cada combinación tienda-activo.
+      </p>
+
+      <!-- FILTROS -->
+      <div class="fr" style="margin-bottom:.75rem;">
+        <div>
+          <label class="fl">Departamento</label>
+          <select class="fi" id="filtroDep" onchange="filtrarTiendasActivos()">
+            <option value="">Todos los departamentos</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:.5rem;">
+          <button class="btn btn-dark btn-sm" onclick="selTodasTiendas()">Seleccionar todas</button>
+          <button class="btn btn-gray btn-sm" onclick="deselTodasTiendas()">Ninguna</button>
+        </div>
+      </div>
+
+      <!-- GRID DOS COLUMNAS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+
+        <!-- TIENDAS -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+          <div style="background:var(--negro);color:var(--dorado);padding:8px 12px;font-size:.78rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+            <span>TIENDAS</span>
+            <span id="cntSelTiendas" style="background:var(--dorado);color:var(--negro);border-radius:20px;padding:1px 8px;font-size:.68rem;">0</span>
+          </div>
+          <div style="padding:6px;">
+            <input class="search" id="searchTiendasAct" placeholder="Buscar tienda..." oninput="filtrarTiendasActivos()" style="margin-bottom:4px;">
+          </div>
+          <div id="listaTiendasActivos" style="max-height:300px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- ACTIVOS -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+          <div style="background:var(--negro);color:var(--dorado);padding:8px 12px;font-size:.78rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+            <span>ACTIVOS</span>
+            <button onclick="selTodosActivos()" style="background:var(--dorado);color:var(--negro);border:none;border-radius:20px;padding:1px 8px;font-size:.68rem;cursor:pointer;">Todos</button>
+          </div>
+          <div id="listaActivosCheck" style="max-height:360px;overflow-y:auto;font-size:.78rem;"></div>
+        </div>
+      </div>
+
+      <!-- RESUMEN Y ACCIÓN -->
+      <div style="background:#fffbeb;border:1.5px solid var(--dorado);border-radius:var(--radius);padding:.85rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+        <div style="font-size:.82rem;">
+          <strong id="resumenActivos">0 tiendas · 0 activos</strong> seleccionados
+          → <strong id="totalDocsActivos">0</strong> documentos
+        </div>
+        <button class="btn btn-dark" onclick="subirActivosMasivo()">⬆️ Cargar activos</button>
+      </div>
+      <div id="logActivos"></div>
+    </div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div class="tab-content" id="tab-clientes">
+    <div class="card">
+      <h3>🏢 Crear cliente</h3>
+      <div class="fr">
+        <div><label class="fl">Nombre ★</label><input class="fi" id="cNombre" placeholder="D1, Jerónimo..."></div>
+        <div><label class="fl">NIT</label><input class="fi" id="cNit" placeholder="900.000.000-0"></div>
+      </div>
+      <div class="fr">
+        <div><label class="fl">Teléfono</label><input class="fi" id="cTel" type="tel"></div>
+        <div><label class="fl">Dirección</label><input class="fi" id="cDir"></div>
+      </div>
+      <button class="btn btn-gold btn-full" onclick="crearCliente()">💾 Crear cliente</button>
+    </div>
+    <div class="card">
+      <h3>📋 Clientes registrados</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Nombre</th><th>NIT</th><th>Tiendas</th><th>Teléfono</th><th></th></tr></thead>
+          <tbody id="tblClientes"><tr><td colspan="5" style="text-align:center;color:#ccc;padding:1rem;">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TÉCNICOS -->
+  <div class="tab-content" id="tab-tecnicos">
+    <div class="card">
+      <h3>👷 Crear técnico</h3>
+      <label class="fl">Nombre completo ★</label>
+      <input class="fi" id="tNombre" placeholder="Nombre completo">
+      <div class="fr">
+        <div><label class="fl">Cédula ★</label><input class="fi" id="tCedula" type="number"></div>
+        <div><label class="fl">Teléfono</label><input class="fi" id="tTel" type="tel"></div>
+      </div>
+      <div class="fr">
+        <div><label class="fl">Cargo</label><input class="fi" id="tCargo" placeholder="Técnico / Ingeniero"></div>
+        <div><label class="fl">Rol</label>
+          <select class="fi" id="tRol">
+            <option value="tecnico">Técnico</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <label class="fl">Clave (4 dígitos) ★</label>
+      <input class="fi" id="tClave" type="password" maxlength="4" placeholder="••••">
+      <button class="btn btn-gold btn-full" onclick="crearTecnico()">💾 Crear técnico</button>
+    </div>
+    <div class="card">
+      <h3>📋 Técnicos registrados</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Nombre</th><th>Cédula</th><th>Cargo</th><th>Rol</th><th></th></tr></thead>
+          <tbody id="tblTecnicos"><tr><td colspan="5" style="text-align:center;color:#ccc;padding:1rem;">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BD -->
+  <div class="tab-content" id="tab-bd">
+    <div class="card">
+      <h3>🗄️ Estado de la base de datos</h3>
+      <div class="stats">
+        <div class="stat"><div class="stat-num" id="bdClientes">—</div><div class="stat-lbl">Clientes</div></div>
+        <div class="stat"><div class="stat-num" id="bdTiendas">—</div><div class="stat-lbl">Tiendas</div></div>
+        <div class="stat"><div class="stat-num" id="bdTecnicos">—</div><div class="stat-lbl">Técnicos</div></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-num" id="bdEquipos">—</div><div class="stat-lbl">Activos</div></div>
+        <div class="stat"><div class="stat-num" id="bdServicios">—</div><div class="stat-lbl">Incidencias</div></div>
+        <div class="stat"><div class="stat-num" id="bdAprobadas">—</div><div class="stat-lbl">Aprobadas</div></div>
+      </div>
+      <button class="btn btn-dark btn-full" onclick="recargarBD()">🔄 Recargar</button>
+    </div>
+    <div class="card" style="border-left:3px solid var(--rojo);">
+      <h3 style="color:var(--rojo);">⚠️ Zona peligrosa</h3>
+      <p style="font-size:.78rem;color:var(--suave);margin-bottom:.75rem;">Estas acciones son irreversibles.</p>
+      <button class="btn btn-red btn-sm" onclick="eliminarTodasTiendas()">🗑️ Eliminar todas las tiendas</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+    getFirestore, collection, addDoc, getDocs, deleteDoc,
+    doc, query, orderBy, writeBatch, where
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey:            "AIzaSyBf8Zu84MPTjx60MsFstL6esFgYEpVurxA",
+    authDomain:        "jdarq-65151.firebaseapp.com",
+    projectId:         "jdarq-65151",
+    storageBucket:     "jdarq-65151.firebasestorage.app",
+    messagingSenderId: "332208097404",
+    appId:             "1:332208097404:web:2e869b22f0b6f0a96ae1f9"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
+let sesion   = null;
+let tiendas  = [];
+let clientes = [];
+let tecnicos = [];
+let csvData  = [];
+
+// ── TOAST ──
+window.toast = (msg, dur=3000) => {
+    const t = document.getElementById('toastEl');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), dur);
+};
+
+// ── LOGIN ──
+window.login = async () => {
+    const ced   = document.getElementById('loginCed')?.value?.trim();
+    const clave = document.getElementById('loginClave')?.value?.trim();
+    const err   = document.getElementById('loginErr');
+    err.style.display = 'none';
+    if (!ced||!clave) { mostrarErr('Ingresa cédula y clave'); return; }
+    try {
+        const snap = await getDocs(collection(db,'tecnicos'));
+        const tec  = snap.docs.map(d=>({id:d.id,...d.data()})).find(t=>t.cedula===ced&&t.clave===clave&&t.rol==='admin');
+        if (!tec) { mostrarErr('Credenciales incorrectas o no eres admin'); return; }
+        sesion = tec;
+        document.getElementById('loginScreen').style.display  = 'none';
+        document.getElementById('appScreen').style.display    = 'block';
+        document.getElementById('topbarUser').textContent     = `👤 ${tec.nombre}`;
+        await cargarTodo();
+        toast(`✅ Bienvenido, ${tec.nombre.split(' ')[0]}`);
+    } catch(e) { mostrarErr('Error: '+e.message); }
+};
+function mostrarErr(msg){ const e=document.getElementById('loginErr'); e.textContent=msg; e.style.display='block'; }
+document.getElementById('loginClave').addEventListener('keydown', e=>{ if(e.key==='Enter') window.login(); });
+
+// ── CARGAR TODO ──
+async function cargarTodo() {
+    const [cSnap,tSnap,tecSnap,eSnap,sSnap] = await Promise.all([
+        getDocs(query(collection(db,'empresas'),  orderBy('nombre'))),
+        getDocs(query(collection(db,'tiendas'),   orderBy('cliente'))),
+        getDocs(query(collection(db,'tecnicos'),  orderBy('nombre'))),
+        getDocs(collection(db,'equipos')),
+        getDocs(collection(db,'servicios'))
+    ]);
+    clientes = cSnap.docs.map(d=>({id:d.id,...d.data()}));
+    tiendas  = tSnap.docs.map(d=>({id:d.id,...d.data()}));
+    tecnicos = tecSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const equipos   = eSnap.docs.length;
+    const servicios = sSnap.docs.length;
+    const aprobadas = sSnap.docs.filter(d=>d.data().aprobado).length;
+
+    renderTiendas(); renderClientes(); renderTecnicos();
+    poblarFiltroDep();
+    renderTiendasActivos();
+    renderActivosCheck();
+
+    document.getElementById('bdClientes').textContent  = clientes.length;
+    document.getElementById('bdTiendas').textContent   = tiendas.length;
+    document.getElementById('bdTecnicos').textContent  = tecnicos.length;
+    document.getElementById('bdEquipos').textContent   = equipos;
+    document.getElementById('bdServicios').textContent = servicios;
+    document.getElementById('bdAprobadas').textContent = aprobadas;
+
+    // Poblar filtro de clientes
+    const sel = document.getElementById('filtroCliente');
+    sel.innerHTML = '<option value="">Todos los clientes</option>' +
+        clientes.map(c=>`<option value="${c.nombre}">${c.nombre}</option>`).join('');
+}
+window.recargarBD = cargarTodo;
+
+// ── TABS ──
+window.switchTab = (tab) => {
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.querySelectorAll('.tab').forEach(t=>{
+        if(t.textContent.toLowerCase().includes(tab.slice(0,5).toLowerCase())) t.classList.add('active');
+    });
+};
+
+// ── PLANTILLA CSV ──
+window.descargarPlantilla = () => {
+    const csv = `cliente,codigo,nombre,municipio,departamento,latitud,longitud
+D1,6A1B001,D1 Centro Ibagué,Ibagué,Tolima,4.438889,-75.232222
+D1,6A1B002,D1 Ambala,Ibagué,Tolima,4.441200,-75.229800
+D1,6A1B003,D1 El Jardín,Ibagué,Tolima,4.435100,-75.235600`;
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+    a.download = 'Plantilla_Tiendas_JDARQ.csv';
+    a.click();
+    toast('✅ Plantilla descargada');
+};
+
+// ── DRAG & DROP ──
+window.dragOver  = (e,id) => { e.preventDefault(); document.getElementById(id).classList.add('over'); };
+window.dragLeave = (id)   => document.getElementById(id).classList.remove('over');
+window.dropFile  = (e,tipo) => { e.preventDefault(); dragLeave('dropTiendas'); procesarCSV(e.dataTransfer.files[0],tipo); };
+window.leerCSV   = (input,tipo) => { if(input.files[0]) procesarCSV(input.files[0],tipo); };
+
+function procesarCSV(file, tipo) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        const texto  = e.target.result.replace(/\r/g,'');
+        const lineas = texto.split('\n').map(l=>l.trim()).filter(Boolean);
+        if (lineas.length < 2) { toast('⚠️ CSV vacío'); return; }
+        // Detectar separador automáticamente
+        const sep = lineas[0].includes(';') ? ';' : ',';
+        const enc  = lineas[0].split(sep).map(h=>h.trim().toLowerCase().replace(/^\uFEFF/,''));
+        const datos = lineas.slice(1).map(l => {
+            // Manejar campos con comillas
+            const cols = l.split(sep).map(c=>c.trim().replace(/^"|"$/g,''));
+            const obj  = {};
+            enc.forEach((h,i)=>obj[h]=cols[i]||'');
+            return obj;
+        }).filter(d => Object.values(d).some(v=>v)); // Filtrar filas vacías
+        if (tipo==='tiendas') previewTiendas(datos);
+    };
+    reader.readAsText(file,'UTF-8');
+}
+
+function previewTiendas(datos) {
+    csvData = datos;
+    const validos   = datos.filter(d=>d.codigo&&d.nombre&&d.cliente);
+    const invalidos = datos.filter(d=>!d.codigo||!d.nombre||!d.cliente);
+    document.getElementById('previewTiendas').innerHTML = `
+      <div style="margin:.75rem 0;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+        <span class="badge b-green">${validos.length} válidos</span>
+        ${invalidos.length?`<span class="badge b-red">${invalidos.length} incompletos</span>`:''}
+        <button class="btn btn-gold btn-sm" onclick="subirTiendas()">⬆️ Subir ${validos.length} tiendas</button>
+        <button class="btn btn-gray btn-sm" onclick="document.getElementById('previewTiendas').innerHTML=''">✕ Cancelar</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Código</th><th>Nombre</th><th>Municipio</th><th>Departamento</th><th>GPS</th><th>Estado</th></tr></thead>
+          <tbody>
+            ${datos.slice(0,50).map(d=>`<tr>
+              <td>${d.cliente||'—'}</td>
+              <td style="font-weight:700;color:var(--dorado);">${d.codigo||'—'}</td>
+              <td>${d.nombre||'—'}</td>
+              <td>${d.municipio||'—'}</td>
+              <td>${d.departamento||'—'}</td>
+              <td style="font-size:.68rem;">${d.latitud&&d.longitud?`📍 ${d.latitud},${d.longitud}`:'—'}</td>
+              <td>${(d.codigo&&d.nombre&&d.cliente)?'<span class="badge b-green">✓</span>':'<span class="badge b-red">✗</span>'}</td>
+            </tr>`).join('')}
+            ${datos.length>50?`<tr><td colspan="7" style="text-align:center;color:#999;font-size:.72rem;">... y ${datos.length-50} más</td></tr>`:''}
+          </tbody>
+        </table>
+      </div>`;
+}
+
+window.subirTiendas = async () => {
+    const validos = csvData.filter(d=>d.codigo&&d.nombre&&d.cliente);
+    if (!validos.length) { toast('⚠️ Sin datos válidos'); return; }
+    const logEl = document.createElement('div');
+    logEl.className = 'log';
+    document.getElementById('previewTiendas').appendChild(logEl);
+    const log = (tipo,msg) => { logEl.innerHTML+=`<div class="${tipo}">[${new Date().toLocaleTimeString('es-CO')}] ${msg}</div>`; logEl.scrollTop=logEl.scrollHeight; };
+    log('info',`Cargando ${validos.length} tiendas...`);
+    let ok=0, err=0;
+    const LOTE=400;
+    for (let i=0; i<validos.length; i+=LOTE) {
+        const lote  = validos.slice(i,i+LOTE);
+        const batch = writeBatch(db);
+        lote.forEach(t=>{
+            const lat = t.latitud  && !isNaN(parseFloat(t.latitud))  ? parseFloat(t.latitud)  : null;
+            const lng = t.longitud && !isNaN(parseFloat(t.longitud)) ? parseFloat(t.longitud) : null;
+            const clienteObj = clientes.find(c => c.nombre.toUpperCase() === t.cliente.trim().toUpperCase());
+            batch.set(doc(collection(db,'tiendas')),{
+                cliente:      t.cliente.trim(),
+                clienteId:    clienteObj?.id || '',
+                codigo:       t.codigo.trim(),
+                nombre:       t.nombre.trim(),
+                municipio:    (t.municipio||'').trim(),
+                departamento: (t.departamento||'').trim(),
+                latitud:      lat,
+                longitud:     lng,
+                creadoEn:     new Date().toISOString()
+            });
+        });
+        try { await batch.commit(); ok+=lote.length; log('ok',`Lote ${Math.floor(i/LOTE)+1}: ${lote.length} tiendas (total ${ok})`); }
+        catch(e) { err+=lote.length; log('err',`Error lote: ${e.message}`); }
+    }
+    log('info',`✅ Completo: ${ok} ok · ${err} errores`);
+    toast(`✅ ${ok} tiendas cargadas`);
+    csvData=[];
+    document.getElementById('previewTiendas').innerHTML='';
+    await cargarTodo();
+};
+
+// ── RENDER TIENDAS ──
+function renderTiendas() {
+    const munis = new Set(tiendas.map(t=>t.municipio)).size;
+    const clis  = new Set(tiendas.map(t=>t.cliente)).size;
+    document.getElementById('cntTiendas').textContent    = tiendas.length;
+    document.getElementById('cntMunicipios').textContent = munis;
+    document.getElementById('cntClientes').textContent   = clis;
+    document.getElementById('tblTiendas').innerHTML = tiendas.length
+        ? tiendas.map(t=>`
+            <tr data-search="${(t.cliente+t.codigo+t.nombre+t.municipio+t.departamento).toLowerCase()}" data-cliente="${t.cliente||''}">
+              <td><span class="badge b-gold">${t.cliente||'—'}</span></td>
+              <td style="font-weight:700;color:var(--dorado);">${t.codigo}</td>
+              <td>${t.nombre}</td>
+              <td>${t.municipio||'—'}</td>
+              <td>${t.departamento||'—'}</td>
+              <td>${t.latitud&&t.longitud?`<a href="https://maps.google.com/?q=${t.latitud},${t.longitud}" target="_blank" style="color:var(--rojo);font-size:.72rem;">📍 Ver</a>`:'—'}</td>
+              <td><button class="btn btn-sm btn-gray" onclick="eliminarTienda('${t.id}')">🗑️</button></td>
+            </tr>`).join('')
+        : '<tr><td colspan="7" style="text-align:center;color:#ccc;padding:1rem;">Sin tiendas</td></tr>';
+}
+
+window.filtrarTiendas = (v) => {
+    const cli = document.getElementById('filtroCliente')?.value||'';
+    document.querySelectorAll('#tblTiendas tr[data-search]').forEach(r=>{
+        const matchSearch = (r.dataset.search||'').includes(v.toLowerCase());
+        const matchCli    = !cli || r.dataset.cliente===cli;
+        r.style.display   = (matchSearch&&matchCli)?'':'none';
+    });
+};
+
+window.eliminarTienda = async (tid) => {
+    if (!confirm('¿Eliminar esta tienda?')) return;
+    try { await deleteDoc(doc(db,'tiendas',tid)); toast('🗑️ Tienda eliminada'); await cargarTodo(); }
+    catch(e) { toast('⚠️ Error: '+e.message); }
+};
+
+window.eliminarTodasTiendas = async () => {
+    if (!confirm(`⚠️ ¿Eliminar TODAS las ${tiendas.length} tiendas?`)) return;
+    if (!confirm('¿Seguro? Esta acción es irreversible.')) return;
+    const LOTE=400;
+    for (let i=0; i<tiendas.length; i+=LOTE) {
+        const batch=writeBatch(db);
+        tiendas.slice(i,i+LOTE).forEach(t=>batch.delete(doc(db,'tiendas',t.id)));
+        await batch.commit();
+    }
+    toast('🗑️ Todas las tiendas eliminadas'); await cargarTodo();
+};
+
+// ── CLIENTES ──
+window.crearCliente = async () => {
+    const nombre = document.getElementById('cNombre')?.value?.trim();
+    if (!nombre) { toast('⚠️ Nombre requerido'); return; }
+    try {
+        await addDoc(collection(db,'empresas'),{
+            nombre, nit: document.getElementById('cNit')?.value||'',
+            telefono: document.getElementById('cTel')?.value||'',
+            direccion: document.getElementById('cDir')?.value||'',
+            creadoEn: new Date().toISOString()
+        });
+        toast('✅ Cliente creado');
+        ['cNombre','cNit','cTel','cDir'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        await cargarTodo();
+    } catch(e) { toast('⚠️ Error: '+e.message); }
+};
+
+function renderClientes() {
+    document.getElementById('tblClientes').innerHTML = clientes.length
+        ? clientes.map(c=>{
+            const cnt = tiendas.filter(t=>t.cliente===c.nombre).length;
+            return `<tr>
+              <td style="font-weight:700;">${c.nombre}</td>
+              <td>${c.nit||'—'}</td>
+              <td><span class="badge b-gold">${cnt} tiendas</span></td>
+              <td>${c.telefono||'—'}</td>
+              <td><button class="btn btn-sm btn-gray" onclick="eliminarCliente('${c.id}')">🗑️</button></td>
+            </tr>`;}).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:#ccc;padding:1rem;">Sin clientes</td></tr>';
+}
+
+window.eliminarCliente = async (cid) => {
+    if (!confirm('¿Eliminar este cliente?')) return;
+    try { await deleteDoc(doc(db,'empresas',cid)); toast('🗑️ Cliente eliminado'); await cargarTodo(); }
+    catch(e) { toast('⚠️ Error: '+e.message); }
+};
+
+// ── TÉCNICOS ──
+window.crearTecnico = async () => {
+    const nombre = document.getElementById('tNombre')?.value?.trim();
+    const cedula = document.getElementById('tCedula')?.value?.trim();
+    const clave  = document.getElementById('tClave')?.value?.trim();
+    if (!nombre||!cedula||!clave) { toast('⚠️ Nombre, cédula y clave requeridos'); return; }
+    if (clave.length!==4) { toast('⚠️ Clave de exactamente 4 dígitos'); return; }
+    try {
+        await addDoc(collection(db,'tecnicos'),{
+            nombre, cedula, clave,
+            telefono: document.getElementById('tTel')?.value||'',
+            cargo:    document.getElementById('tCargo')?.value||'',
+            rol:      document.getElementById('tRol')?.value||'tecnico',
+            tipoDoc: 'CC', creadoEn: new Date().toISOString()
+        });
+        toast('✅ Técnico creado');
+        ['tNombre','tCedula','tTel','tCargo','tClave'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        await cargarTodo();
+    } catch(e) { toast('⚠️ Error: '+e.message); }
+};
+
+function renderTecnicos() {
+    document.getElementById('tblTecnicos').innerHTML = tecnicos.length
+        ? tecnicos.map(t=>`<tr>
+            <td style="font-weight:700;">${t.nombre}</td>
+            <td>${t.cedula||'—'}</td>
+            <td>${t.cargo||'—'}</td>
+            <td><span class="badge ${t.rol==='admin'?'b-gold':'b-green'}">${t.rol==='admin'?'Admin':'Técnico'}</span></td>
+            <td><button class="btn btn-sm btn-gray" onclick="eliminarTecnico('${t.id}')">🗑️</button></td>
+          </tr>`).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:#ccc;padding:1rem;">Sin técnicos</td></tr>';
+}
+
+window.eliminarTecnico = async (tid) => {
+    if (!confirm('¿Eliminar este técnico?')) return;
+    try { await deleteDoc(doc(db,'tecnicos',tid)); toast('🗑️ Técnico eliminado'); await cargarTodo(); }
+    catch(e) { toast('⚠️ Error: '+e.message); }
+};
+</script>
+</body>
+</html>
