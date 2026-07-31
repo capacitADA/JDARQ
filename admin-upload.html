@@ -177,18 +177,9 @@ tr:hover td{background:var(--bg);}
         Selecciona las tiendas y los activos que aplican. Se creará un documento por cada combinación tienda-activo.
       </p>
 
-      <!-- FILTROS -->
-      <div class="fr" style="margin-bottom:.75rem;">
-        <div>
-          <label class="fl">Departamento</label>
-          <select class="fi" id="filtroDep" onchange="filtrarTiendasActivos()">
-            <option value="">Todos los departamentos</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:flex-end;gap:.5rem;">
-          <button class="btn btn-dark btn-sm" onclick="selTodasTiendas()">Seleccionar todas</button>
-          <button class="btn btn-gray btn-sm" onclick="deselTodasTiendas()">Ninguna</button>
-        </div>
+      <div style="display:flex;gap:.5rem;margin-bottom:.75rem;">
+        <button class="btn btn-dark btn-sm" onclick="selTodasTiendas()">Seleccionar todas</button>
+        <button class="btn btn-gray btn-sm" onclick="deselTodasTiendas()">Ninguna</button>
       </div>
 
       <!-- GRID DOS COLUMNAS -->
@@ -384,7 +375,6 @@ async function cargarTodo() {
     const aprobadas = sSnap.docs.filter(d=>d.data().aprobado).length;
 
     renderTiendas(); renderClientes(); renderTecnicos();
-    if(typeof poblarFiltroDep==='function') poblarFiltroDep();
     if(typeof renderTiendasActivos==='function') renderTiendasActivos();
     if(typeof renderActivosCheck==='function') renderActivosCheck();
 
@@ -411,7 +401,6 @@ window.switchTab = (tab) => {
         if(t.textContent.toLowerCase().includes(tab.slice(0,5).toLowerCase())) t.classList.add('active');
     });
     if(tab==='activos'){
-        poblarFiltroDep();
         renderTiendasActivos();
         renderActivosCheck();
     }
