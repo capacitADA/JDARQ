@@ -401,8 +401,10 @@ window.switchTab = (tab) => {
         if(t.textContent.toLowerCase().includes(tab.slice(0,5).toLowerCase())) t.classList.add('active');
     });
     if(tab==='activos'){
-        renderTiendasActivos();
-        renderActivosCheck();
+        setTimeout(()=>{
+            if(window.renderTiendasActivos) window.renderTiendasActivos();
+            if(window.renderActivosCheck)   window.renderActivosCheck();
+        }, 50);
     }
 };
 
