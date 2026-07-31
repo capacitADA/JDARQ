@@ -410,6 +410,11 @@ window.switchTab = (tab) => {
     document.querySelectorAll('.tab').forEach(t=>{
         if(t.textContent.toLowerCase().includes(tab.slice(0,5).toLowerCase())) t.classList.add('active');
     });
+    if(tab==='activos'){
+        poblarFiltroDep();
+        renderTiendasActivos();
+        renderActivosCheck();
+    }
 };
 
 // ── PLANTILLA CSV ──
