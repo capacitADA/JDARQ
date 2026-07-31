@@ -644,9 +644,6 @@ window.eliminarTecnico = async (tid) => {
     try { await deleteDoc(doc(db,'tecnicos',tid)); toast('🗑️ Técnico eliminado'); await cargarTodo(); }
     catch(e) { toast('⚠️ Error: '+e.message); }
 };
-</body>
-</html>
-
 </script>
 </body>
 </html>
