@@ -176,9 +176,6 @@ async function cargarDatos() {
 // RENDER PRINCIPAL
 // ============================================
 function renderView() {
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('topbarEl').style.display = 'flex';
-    document.getElementById('botnavEl').style.display = 'flex';
     actualizarTopbar();
     const main = document.getElementById('mainContent');
     switch (currentView) {
@@ -715,6 +712,21 @@ window.previewFotoOT = (input, idx) => {
 // ============================================
 // GUARDAR INCIDENCIA
 // ============================================
+function comprimirImagen(base64, maxW=800, calidad=0.7) {
+    return new Promise(res => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if(w > maxW) { h = h * maxW / w; w = maxW; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            res(canvas.toDataURL('image/jpeg', calidad));
+        };
+        img.src = base64;
+    });
+}
+
 async function guardarIncidencia(eid, generarPDF) {
     const idMtto     = document.getElementById('otIdMtto')?.value?.trim();
     const codTienda  = document.getElementById('otCodTienda')?.value?.trim().toUpperCase();
@@ -739,7 +751,8 @@ async function guardarIncidencia(eid, generarPDF) {
 
     const tienda = tiendas.find(x=>x.codigo===codTienda);
     const e      = getEq(eid);
-    const fotos = fotosOT.filter(Boolean);
+    const fotosRaw = fotosOT.filter(Boolean);
+    const fotos = await Promise.all(fotosRaw.map(f => comprimirImagen(f, 800, 0.6)));
 
     const payload = {
         equipoId:   eid,
