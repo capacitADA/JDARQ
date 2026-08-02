@@ -177,6 +177,10 @@ async function cargarDatos() {
 // ============================================
 function renderView() {
     actualizarTopbar();
+    const tb = document.getElementById('topbarEl');
+    const bn = document.getElementById('botnavEl');
+    if(tb) tb.style.display = 'flex';
+    if(bn) bn.style.display = 'flex';
     const main = document.getElementById('mainContent');
     switch (currentView) {
         case 'panel':         main.innerHTML = renderPanel();         break;
