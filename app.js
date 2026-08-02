@@ -542,8 +542,8 @@ function modalNuevaIncidencia(eid) {
     fotosOT = [null,null];
 
     showModal(`<div class="modal modal-wide" onclick="event.stopPropagation()">
-      <div class="modal-h" style="background:var(--green);border-bottom:2px solid var(--gold);">
-        <h3 style="color:var(--gold);">Nueva Incidencia</h3>
+      <div class="modal-h" style="background:#1a1a1a;border-bottom:2px solid #C9A84C;">
+        <h3 style="color:#C9A84C;">Nueva Incidencia</h3>
         <button class="xbtn" style="color:white;" onclick="closeModal()">✕</button>
       </div>
       <div class="modal-b">
@@ -612,7 +612,7 @@ function modalNuevaIncidencia(eid) {
         <!-- EVALUACIÓN -->
         <div style="background:var(--bg2);padding:6px 8px;margin:10px 0 6px;border-radius:6px;font-weight:700;font-size:.78rem;text-align:center;">EVALUACIÓN DEL SERVICIO</div>
         <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;">
-          <div style="display:grid;grid-template-columns:auto 50px 50px;background:var(--green);color:var(--gold);font-size:.68rem;font-weight:700;padding:4px 6px;">
+          <div style="display:grid;grid-template-columns:auto 50px 50px;background:#1a1a1a;color:#C9A84C;font-size:.68rem;font-weight:700;padding:4px 6px;">
             <div>Parámetro</div><div style="text-align:center;">SI</div><div style="text-align:center;">NO</div>
           </div>
           ${PARAMS_EVAL.map(p=>p.items.map((item,i)=>`
@@ -744,10 +744,11 @@ async function guardarIncidencia(eid, generarPDF) {
     const funcCargo  = document.getElementById('otFuncCargo')?.value?.trim()||'';
     const funcTel    = document.getElementById('otFuncTel')?.value?.trim()||'';
 
-    if(!idMtto)      {toast('Ingresa el ID MTTO / N° Incidencia');return;}
-    if(!codTienda)   {toast('Ingresa el código de tienda');return;}
-    if(!descSolic)   {toast('Completa la descripción de la solicitud');return;}
-    if(!actividades) {toast('Completa las actividades ejecutadas');return;}
+    if(!sesionActual) {toast('⚠️ Debes iniciar sesión primero');return;}
+    if(!idMtto)      {toast('⚠️ Ingresa el ID MTTO / N° Incidencia');return;}
+    if(!codTienda)   {toast('⚠️ Ingresa el código de tienda');return;}
+    if(!descSolic)   {toast('⚠️ Completa la descripción de la solicitud');return;}
+    if(!actividades) {toast('⚠️ Completa las actividades ejecutadas');return;}
 
     const tienda = tiendas.find(x=>x.codigo===codTienda);
     const e      = getEq(eid);
@@ -783,12 +784,11 @@ async function guardarIncidencia(eid, generarPDF) {
         const sid = docRef.id;
         toast('✅ Incidencia guardada: ' + idMtto);
         fotosOT = [null,null];
-        await cargarDatos();
         closeModal();
         if(generarPDF) await generarPDFOrden({...payload, id: sid});
         setTimeout(()=>{
             showModal(`<div class="modal" style="max-width:320px;">
-              <div class="modal-h" style="background:var(--green);"><h3 style="color:var(--gold);">✅ ${idMtto} guardada</h3><button class="xbtn" style="color:white;" onclick="closeModal()">✕</button></div>
+              <div class="modal-h" style="background:var(--green);"><h3 style="color:#C9A84C;">✅ ${idMtto} guardada</h3><button class="xbtn" style="color:white;" onclick="closeModal()">✕</button></div>
               <div class="modal-b" style="text-align:center;padding:1.25rem;">
                 <p style="font-size:.85rem;margin-bottom:1rem;">¿Generar QR para que el jefe de tienda apruebe?</p>
                 <button class="btn btn-blue" style="width:100%;margin-bottom:.5rem;" onclick="generarQRAprobacion('${sid}');closeModal();">📱 Generar QR</button>
@@ -796,7 +796,11 @@ async function guardarIncidencia(eid, generarPDF) {
               </div>
             </div>`);
         }, 400);
-    } catch(err) { toast('Error guardando: '+err.message); console.error(err); }
+        cargarDatos();
+    } catch(err) {
+        console.error('Error guardando incidencia:', err);
+        toast('⚠️ Error: '+err.message);
+    }
 }
 
 // ============================================
@@ -968,8 +972,8 @@ ${s.fotos?.filter(Boolean).length?`
     <td style="width:50%;text-align:center;font-weight:700;font-size:7pt;padding:3px;">DESPUÉS</td>
   </tr>
   <tr>
-    <td style="height:300px;text-align:center;vertical-align:middle;padding:4px;">${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:290px;">`:''}</td>
-    <td style="height:300px;text-align:center;vertical-align:middle;padding:4px;">${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:290px;">`:''}</td>
+    <td style="height:380px;text-align:center;vertical-align:middle;padding:8px;">${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:370px;object-fit:contain;">`:''}</td>
+    <td style="height:380px;text-align:center;vertical-align:middle;padding:8px;">${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:370px;object-fit:contain;">`:''}</td>
   </tr>
 </table>`:''}
 
@@ -1066,8 +1070,8 @@ window.generarQRAprobacion = async (sid) => {
         await setDoc(doc(db,'aprobaciones',token),{servicioId:sid,expira,usado:false,creadoEn:new Date().toISOString()});
         const url = `${location.origin}${location.pathname}#/aprobar/${token}`;
         showModal(`<div class="modal" style="max-width:340px;">
-          <div class="modal-h" style="background:var(--green);border-bottom:2px solid var(--gold);">
-            <h3 style="color:var(--gold);">QR para jefe de tienda</h3>
+          <div class="modal-h" style="background:#1a1a1a;border-bottom:2px solid #C9A84C;">
+            <h3 style="color:#C9A84C;">QR para jefe de tienda</h3>
             <button class="xbtn" style="color:white;" onclick="closeModal()">✕</button>
           </div>
           <div class="modal-b" style="text-align:center;">
@@ -1092,7 +1096,7 @@ function manejarRutaAprobacion() {
     main.innerHTML=`<div style="max-width:420px;margin:0 auto;padding:1rem;">
       <div style="background:var(--green);color:white;border-radius:12px;padding:14px;margin-bottom:12px;border-bottom:3px solid var(--gold);text-align:center;">
         <img src="${LOGO_URL}" style="height:40px;margin-bottom:8px;" onerror="this.style.display='none'">
-        <div style="color:var(--gold);font-weight:700;">Aprobación de servicio</div>
+        <div style="color:#C9A84C;font-weight:700;">Aprobación de servicio</div>
       </div>
       <div id="aprobContenido"><div style="text-align:center;padding:2rem;color:#94a3b8;">Cargando...</div></div>
     </div>`;
@@ -1127,7 +1131,7 @@ async function cargarAprobacionQR(token) {
             <button onclick="document.getElementById('firmaJefeQR').getContext('2d').clearRect(0,0,1000,300)" style="background:none;border:1px solid #e0e0e0;border-radius:6px;padding:4px 10px;font-size:.72rem;margin-top:4px;cursor:pointer;">Limpiar</button>
           </div>
           <div style="font-size:.7rem;color:#94a3b8;margin-bottom:12px;">Al firmar confirmas que el servicio fue realizado a satisfacción. Tu celular, firma y ubicación quedan registrados.</div>
-          <button onclick="confirmarAprobacionQR('${token}','${s.id}')" style="background:var(--gold);color:var(--green);font-weight:700;border:none;border-radius:10px;padding:.85rem;width:100%;font-size:.95rem;cursor:pointer;">✅ Aprobar y firmar</button>`;
+          <button onclick="confirmarAprobacionQR('${token}','${s.id}')" style="background:#C9A84C;color:#1a1a1a;font-weight:700;border:none;border-radius:10px;padding:.85rem;width:100%;font-size:.95rem;cursor:pointer;">✅ Aprobar y firmar</button>`;
         setTimeout(()=>iniciarFirmaCanvas('firmaJefeQR'),100);
     } catch(e){cont.innerHTML=`<div style="background:#fee2e2;color:#991b1b;padding:1rem;border-radius:8px;">Error: ${e.message}</div>`;}
 }
