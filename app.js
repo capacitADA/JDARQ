@@ -353,7 +353,7 @@ ${eqs.map(e=>{
     return `<div class="ec">
         <div style="display:flex;justify-content:space-between;">
           <div>
-            <div class="ec-name">${e.nombre||'Sin nombre'}</div>
+            <div class="ec-name">${e.tipo||e.nombre||'Sin nombre'}</div>
             ${e.descripcion?`<div class="ec-meta">${e.descripcion}</div>`:''}
             <div class="ec-meta">${ns} incidencia(s)${ult?` · Última: ${fmtFecha(ult.fecha||ult.creadoEn?.split('T')[0])}`:''}
             </div>
@@ -374,7 +374,7 @@ window.descargarHistorialTienda = (tid) => {
     const eqs = getEquiposTienda(tid);
     let csv   = 'ID MTTO,Fecha,Activo,Tipo,Técnico,Aprobada\n';
     eqs.forEach(e => getServiciosEquipo(e.id).forEach(s => {
-        csv += `${s.idMtto||''},${s.fecha||''},${e.nombre||''},${s.tipoAsistencia||''},${s.tecnico||''},${s.aprobado?'Sí':'No'}\n`;
+        csv += `${s.idMtto||''},${s.fecha||''},${e.tipo||e.nombre||''},${s.tipoAsistencia||''},${s.tecnico||''},${s.aprobado?'Sí':'No'}\n`;
     }));
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
