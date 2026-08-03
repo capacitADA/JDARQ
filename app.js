@@ -1426,4 +1426,9 @@ window.descargarHistorialTienda = descargarHistorialTienda;
 // ============================================
 // INIT
 // ============================================
+// Asignar eventos al nav
+document.querySelectorAll('.bni').forEach(btn => {
+    btn.addEventListener('click', () => goTo(btn.dataset.page));
+});
+
 (async () => { await cargarDatos(); })();
