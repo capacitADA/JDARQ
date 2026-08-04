@@ -201,49 +201,86 @@ function renderView() {
 function renderPanel() {
     const hoy  = new Date();
     const pref = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
-    const total = servicios.length;
-    const mes   = servicios.filter(s => (s.creadoEn||s.fecha||'').startsWith(pref)).length;
-    const pend  = servicios.filter(s => !s.aprobado).length;
-    const aprobadas = servicios.filter(s => s.aprobado).length;
 
-    const col = (t, v, c) => `
-        <div style="background:white;border-radius:10px;padding:10px;border:1px solid var(--border);">
-          <div style="font-size:.65rem;font-weight:700;color:#666;text-transform:uppercase;">${t}</div>
-          <div style="font-size:1.6rem;font-weight:800;color:${c};">${v}</div>
+    // Estado activos
+    const eqOp   = equipos.filter(e => e.estado === 'Activo' || e.estado === 'Operativo').length;
+    const eqFs   = equipos.filter(e => e.estado === 'Fuera de servicio').length;
+    const eqBaja = equipos.filter(e => e.estado === 'Dar de baja').length;
+    const eqSin  = equipos.filter(e => !e.estado || (e.estado !== 'Activo' && e.estado !== 'Operativo' && e.estado !== 'Fuera de servicio' && e.estado !== 'Dar de baja')).length;
+
+    // Servicios año actual
+    const anio = String(hoy.getFullYear());
+    const sAnio = servicios.filter(s => (s.creadoEn||s.fecha||'').startsWith(anio));
+    const sMes  = servicios.filter(s => (s.creadoEn||s.fecha||'').startsWith(pref));
+
+    const tipoCount = (lista, tipo) => lista.filter(s =>
+        (s.tipoAsistencia||s.tipo||'').toLowerCase().includes(tipo.toLowerCase())
+    ).length;
+
+    const eqFuera = equipos.filter(e => e.estado === 'Fuera de servicio');
+
+    const fila = (lbl, v) => `
+        <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:.82rem;border-bottom:1px solid #f0f0f0;">
+          <span>${lbl}</span>
+          <strong style="color:${v>0?'var(--red)':'#16a34a'};">${v}</strong>
         </div>`;
 
-    const pendientes = servicios.filter(s => !s.aprobado).slice(0, 3);
-
     return `<div class="page">
-<div class="panel-header">
-  <img src="${LOGO_URL}" onerror="this.style.display='none'" style="height:36px;">
-  <div><div class="panel-title">${EMPRESA_NOMBRE}</div><div class="panel-sub">NIT ${EMPRESA_NIT}</div></div>
+<div style="background:var(--green);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+  <img src="${LOGO_URL}" onerror="this.style.display='none'" style="height:36px;border-radius:4px;">
+  <div>
+    <div style="color:white;font-weight:700;font-size:.95rem;">Panel Principal</div>
+    <div style="color:rgba(255,255,255,.6);font-size:.72rem;">${EMPRESA_NOMBRE}</div>
+  </div>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-  ${col('Total incidencias', total, 'var(--green)')}
-  ${col('Este mes', mes, 'var(--gold)')}
-  ${col('Aprobadas', aprobadas, '#16a34a')}
-  ${col('Pendientes', pend, pend > 0 ? 'var(--red)' : '#16a34a')}
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+
+  <div style="background:white;border-radius:10px;padding:10px;border:1px solid var(--border);">
+    <div style="font-size:.65rem;font-weight:700;color:#666;text-transform:uppercase;margin-bottom:6px;">ESTADO</div>
+    ${fila('Operativos', eqOp)}
+    ${fila('Fuera serv.', eqFs)}
+    ${fila('Dar de baja', eqBaja)}
+    ${fila('Sin info', eqSin)}
+  </div>
+
+  <div style="background:white;border-radius:10px;padding:10px;border:1px solid var(--border);">
+    <div style="font-size:.65rem;font-weight:700;color:#666;text-transform:uppercase;margin-bottom:6px;">SERV. ANUAL</div>
+    ${fila('Mantenm.', tipoCount(sAnio,'preventivo')+tipoCount(sAnio,'mantenimiento'))}
+    ${fila('Reparación', tipoCount(sAnio,'correctivo')+tipoCount(sAnio,'reparación'))}
+    ${fila('Instalación', tipoCount(sAnio,'instalacion'))}
+  </div>
+
+  <div style="background:white;border-radius:10px;padding:10px;border:1px solid var(--border);">
+    <div style="font-size:.65rem;font-weight:700;color:#666;text-transform:uppercase;margin-bottom:6px;">SERV. MES</div>
+    ${fila('Mantenm.', tipoCount(sMes,'preventivo')+tipoCount(sMes,'mantenimiento'))}
+    ${fila('Reparación', tipoCount(sMes,'correctivo')+tipoCount(sMes,'reparación'))}
+    ${fila('Instalación', tipoCount(sMes,'instalacion'))}
+  </div>
+
 </div>
-${esAdmin() && pendientes.length ? `
-<div style="background:#fff8f0;border:1.5px solid var(--gold);border-radius:10px;padding:.85rem;margin-bottom:10px;">
-  <div style="font-weight:700;font-size:.8rem;color:var(--red);margin-bottom:.5rem;">Pendientes de aprobación</div>
-  ${pendientes.map(s=>`
+
+<div style="background:white;border-radius:10px;padding:.85rem;border:1px solid var(--border);margin-bottom:10px;">
+  <div style="font-weight:700;font-size:.8rem;color:var(--red);margin-bottom:.5rem;">⚠️ Activos FUERA DE SERVICIO</div>
+  ${eqFuera.length === 0
+    ? '<div style="color:#94a3b8;font-size:.78rem;">No hay activos en este estado.</div>'
+    : eqFuera.slice(0,5).map(e=>`
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f5f5f5;font-size:.78rem;">
+        <span style="font-weight:700;">${e.tipo||e.nombre||'—'}</span>
+        <span style="color:#555;">${e.tienda||'—'}</span>
+      </div>`).join('')}
+</div>
+
+${esAdmin() && servicios.filter(s=>!s.aprobado).length ? `
+<div style="background:#fff8f0;border:1.5px solid var(--gold);border-radius:10px;padding:.85rem;">
+  <div style="font-weight:700;font-size:.8rem;color:var(--red);margin-bottom:.5rem;">Pendientes de aprobación (${servicios.filter(s=>!s.aprobado).length})</div>
+  ${servicios.filter(s=>!s.aprobado).slice(0,3).map(s=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f0e8d8;font-size:.78rem;">
       <span style="font-weight:700;">${s.idMtto||'—'}</span>
       <span>${s.tiendaNombre||s.tiendaCodigo||'—'}</span>
       <button class="ab" onclick="aprobarIncidencia('${s.id}')">Aprobar</button>
     </div>`).join('')}
 </div>` : ''}
-<div style="background:white;border-radius:10px;padding:.85rem;border:1px solid var(--border);">
-  <div style="font-weight:700;font-size:.8rem;margin-bottom:.6rem;">Incidencias recientes</div>
-  ${servicios.slice(0,6).map(s=>`
-    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f5f5f5;font-size:.78rem;cursor:pointer;">
-      <span style="font-weight:700;color:var(--gold);">${s.idMtto||'—'}</span>
-      <span>${s.tiendaNombre||s.tiendaCodigo||'—'}</span>
-      <span style="color:${s.aprobado?'#16a34a':'#94a3b8'};">${s.aprobado?'✓ Aprobada':'Pendiente'}</span>
-    </div>`).join('')}
-</div>
 </div>`;
 }
 
