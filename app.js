@@ -988,12 +988,12 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
 <table class="blk">
   <tr><td colspan="7" class="hd">CONSTANCIA DE ASISTENCIA REALIZADA</td></tr>
   <tr>
-    <th style="font-size:7pt;width:18%;">Datos</th>
-    <th style="font-size:7pt;width:17%;">Contratistas</th>
-    <th style="font-size:7pt;width:12%;">Cédula</th>
-    <th style="font-size:7pt;width:11%;">H. Entrada</th>
-    <th style="font-size:7pt;width:11%;">H. Salida</th>
-    <th style="font-size:7pt;width:15%;" colspan="2">Funcionario de la tienda</th>
+    <th style="font-size:7pt;width:22%;">Datos</th>
+    <th style="font-size:7pt;width:14%;">Contratistas</th>
+    <th style="font-size:7pt;width:11%;">Cédula</th>
+    <th style="font-size:7pt;width:10%;">H. Entrada</th>
+    <th style="font-size:7pt;width:10%;">H. Salida</th>
+    <th style="font-size:7pt;width:33%;" colspan="2">Funcionario de la tienda</th>
   </tr>
   <tr style="height:20px;">
     <td style="font-size:7pt;">${s.tecnico||''}</td>
