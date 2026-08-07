@@ -371,6 +371,7 @@ function renderDetalleTienda() {
     if (!t) { goTo('detalle', selectedClienteId); return ''; }
     const eqs = getEquiposTienda(t.id);
     return `<div class="page">
+<input class="search" id="busqActivos" placeholder="🔍 Buscar activo..." oninput="filtrarActivos(this.value)" style="margin-bottom:.75rem;">
 <button class="back" onclick="goTo('detalle','${c?.id}')">← ${c?.nombre||'Volver'}</button>
 <div class="info-box">
   <div class="cc-name">${t.nombre}</div>
@@ -390,7 +391,7 @@ ${eqs.map(e=>{
     return `<div class="ec">
         <div style="display:flex;justify-content:space-between;">
           <div>
-            <div class="ec-name">${e.tipo||e.nombre||'Sin nombre'}</div>
+            <div class="ec-name">${e.nombre||'Sin nombre'}</div>
             ${e.descripcion?`<div class="ec-meta">${e.descripcion}</div>`:''}
             <div class="ec-meta">${ns} incidencia(s)${ult?` · Última: ${fmtFecha(ult.fecha||ult.creadoEn?.split('T')[0])}`:''}
             </div>
@@ -411,7 +412,7 @@ window.descargarHistorialTienda = (tid) => {
     const eqs = getEquiposTienda(tid);
     let csv   = 'ID MTTO,Fecha,Activo,Tipo,Técnico,Aprobada\n';
     eqs.forEach(e => getServiciosEquipo(e.id).forEach(s => {
-        csv += `${s.idMtto||''},${s.fecha||''},${e.tipo||e.nombre||''},${s.tipoAsistencia||''},${s.tecnico||''},${s.aprobado?'Sí':'No'}\n`;
+        csv += `${s.idMtto||''},${s.fecha||''},${e.nombre||''},${s.tipoAsistencia||''},${s.tecnico||''},${s.aprobado?'Sí':'No'}\n`;
     }));
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
@@ -430,7 +431,7 @@ function renderHistorial() {
     return `<div class="page">
 <button class="back" onclick="goTo('detalle-tienda','${selectedClienteId}','${e.tiendaId||selectedTiendaId}')">← ${t?.nombre||'Volver'}</button>
 <div style="margin-bottom:.65rem;">
-  <div class="ec-name">${e.nombre||'Activo'}</div>
+  <div class="ec-name">${e.nombre||'Sin nombre'}</div>
   ${e.descripcion?`<div class="ec-meta">${e.descripcion}</div>`:''}
 </div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.65rem;">
@@ -1259,7 +1260,7 @@ function manejarRutaTienda() {
       ${eqs.map(e=>{
         const inc=getServiciosEquipo(e.id);
         return `<div style="background:white;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #e0e0e0;">
-          <div style="font-weight:700;">${e.nombre||'Activo'}</div>
+          <div style="font-weight:700;">${e.nombre||'Sin nombre'}</div>
           ${e.descripcion?`<div style="font-size:.76rem;color:#555;">${e.descripcion}</div>`:''}
           <div style="font-size:.72rem;color:#888;margin-top:4px;">${inc.length} incidencia(s)</div>
         </div>`;
