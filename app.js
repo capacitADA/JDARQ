@@ -266,7 +266,7 @@ function renderPanel() {
     ? '<div style="color:#94a3b8;font-size:.78rem;">No hay activos en este estado.</div>'
     : eqFuera.slice(0,5).map(e=>`
       <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f5f5f5;font-size:.78rem;">
-        <span style="font-weight:700;">${e.tipo||e.nombre||'—'}</span>
+        <span style="font-weight:700;">${e.tipo||e.tipo||e.nombre||'—'}</span>
         <span style="color:#555;">${e.tienda||'—'}</span>
       </div>`).join('')}
 </div>
@@ -391,7 +391,7 @@ ${eqs.map(e=>{
     return `<div class="ec">
         <div style="display:flex;justify-content:space-between;">
           <div>
-            <div class="ec-name">${e.nombre||'Sin nombre'}</div>
+            <div class="ec-name">${e.tipo||e.nombre||'Sin nombre'}</div>
             ${e.descripcion?`<div class="ec-meta">${e.descripcion}</div>`:''}
             <div class="ec-meta">${ns} incidencia(s)${ult?` · Última: ${fmtFecha(ult.fecha||ult.creadoEn?.split('T')[0])}`:''}
             </div>
@@ -412,7 +412,7 @@ window.descargarHistorialTienda = (tid) => {
     const eqs = getEquiposTienda(tid);
     let csv   = 'ID MTTO,Fecha,Activo,Tipo,Técnico,Aprobada\n';
     eqs.forEach(e => getServiciosEquipo(e.id).forEach(s => {
-        csv += `${s.idMtto||''},${s.fecha||''},${e.nombre||''},${s.tipoAsistencia||''},${s.tecnico||''},${s.aprobado?'Sí':'No'}\n`;
+        csv += `${s.idMtto||''},${s.fecha||''},${e.tipo||e.nombre||''},${s.tipoAsistencia||''},${s.tecnico||''},${s.aprobado?'Sí':'No'}\n`;
     }));
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
@@ -431,7 +431,7 @@ function renderHistorial() {
     return `<div class="page">
 <button class="back" onclick="goTo('detalle-tienda','${selectedClienteId}','${e.tiendaId||selectedTiendaId}')">← ${t?.nombre||'Volver'}</button>
 <div style="margin-bottom:.65rem;">
-  <div class="ec-name">${e.nombre||'Sin nombre'}</div>
+  <div class="ec-name">${e.tipo||e.nombre||'Sin nombre'}</div>
   ${e.descripcion?`<div class="ec-meta">${e.descripcion}</div>`:''}
 </div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.65rem;">
@@ -894,36 +894,51 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
 <table style="width:100%;border-collapse:collapse;border:2px solid #000;margin-bottom:-2px;">
 <tr>
   <td style="width:70px;text-align:center;padding:4px;border-right:1px solid #000;">
-    <img src="${LOGO_URL}" style="height:40px;" crossorigin="anonymous">
+    <img src="${LOGO_URL}" style="height:40px;" crossorigin="anonymous" onerror="this.style.display='none'">
   </td>
   <td style="text-align:center;font-weight:700;font-size:10pt;">ORDEN DE TRABAJO MANTENIMIENTO</td>
-  <td style="width:140px;padding:4px;border-left:1px solid #000;font-size:8pt;">
-    <strong>ID MTTO:</strong> ${s.idMtto||''}<br>
-    <strong>FECHA:</strong> ${dd} ${mes} ${aa}
-  </td>
 </tr>
 </table>
 
 <table class="blk">
   <tr><td colspan="4" class="hd">INFORMACIÓN CONTRATISTA</td></tr>
-  <tr><td class="lbl">Razón Social:</td><td colspan="3">${EMPRESA_NOMBRE}</td></tr>
-  <tr><td class="lbl">N° NIT:</td><td>${EMPRESA_NIT}</td><td class="lbl">Teléfono:</td><td>${EMPRESA_TEL}</td></tr>
-  <tr><td class="lbl">Contacto:</td><td colspan="3">${EMPRESA_CONTACTO}</td></tr>
+  <tr>
+    <td class="lbl" style="width:20%;">Razón Social:</td>
+    <td style="width:30%;">${EMPRESA_NOMBRE}</td>
+    <td class="lbl" style="width:12%;">N° NIT:</td>
+    <td>${EMPRESA_NIT}</td>
+  </tr>
+  <tr>
+    <td class="lbl">Contacto:</td>
+    <td>${EMPRESA_CONTACTO}</td>
+    <td class="lbl">Teléfono:</td>
+    <td>${EMPRESA_TEL}</td>
+  </tr>
 </table>
 
 <table class="blk">
   <tr><td colspan="6" class="hd">INFORMACIÓN SOLICITANTE Y TIENDA D1</td></tr>
   <tr>
-    <td class="lbl">Nombre de la tienda:</td><td colspan="2">${s.tiendaNombre||''}</td>
-    <td class="lbl">COD. TIENDA:</td><td colspan="2">${s.tiendaCodigo||''}</td>
+    <td class="lbl" style="width:17%;">Nombre tienda:</td>
+    <td style="width:20%;">${s.tiendaNombre||''}</td>
+    <td class="lbl" style="width:13%;">Cód. Tienda:</td>
+    <td style="width:12%;">${s.tiendaCodigo||''}</td>
+    <td class="lbl" style="width:13%;">ID Incidencia:</td>
+    <td style="width:25%;">${s.idMtto||''}</td>
   </tr>
   <tr>
-    <td class="lbl">Nombre del solicitante:</td><td colspan="2">${s.funcNombre||''}</td>
-    <td class="lbl">Departamento:</td><td colspan="2">${s.tiendaDepartamento||''}</td>
+    <td class="lbl">Nombre solicitante:</td>
+    <td>${s.funcNombre||''}</td>
+    <td class="lbl">Activo:</td>
+    <td>${s.equipoNombre||e?.tipo||e?.nombre||''}</td>
+    <td class="lbl">Fecha:</td>
+    <td>${dd}/${mes.slice(0,3)}/${aa}</td>
   </tr>
   <tr>
-    <td class="lbl">Municipio:</td><td colspan="2">${s.tiendaMunicipio||''}</td>
-    <td class="lbl">Activo:</td><td colspan="2">${s.equipoNombre||e?.nombre||''}</td>
+    <td class="lbl">Ciudad:</td>
+    <td>${s.tiendaMunicipio||''}</td>
+    <td class="lbl">Departamento:</td>
+    <td colspan="3">${s.tiendaDepartamento||''}</td>
   </tr>
 </table>
 
@@ -971,33 +986,40 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
 </table>
 
 <table class="blk">
-  <tr><td colspan="6" class="hd">CONSTANCIA DE ASISTENCIA REALIZADA</td></tr>
+  <tr><td colspan="7" class="hd">CONSTANCIA DE ASISTENCIA REALIZADA</td></tr>
   <tr>
-    <th style="font-size:7pt;">Datos</th>
-    <th style="font-size:7pt;">Contratistas</th>
-    <th style="font-size:7pt;">Cédula</th>
-    <th style="font-size:7pt;">Hora de entrada</th>
-    <th style="font-size:7pt;">Hora de salida</th>
-    <th style="font-size:7pt;">Funcionario de la tienda</th>
+    <th style="font-size:7pt;width:18%;">Datos</th>
+    <th style="font-size:7pt;width:17%;">Contratistas</th>
+    <th style="font-size:7pt;width:12%;">Cédula</th>
+    <th style="font-size:7pt;width:11%;">H. Entrada</th>
+    <th style="font-size:7pt;width:11%;">H. Salida</th>
+    <th style="font-size:7pt;width:15%;" colspan="2">Funcionario de la tienda</th>
   </tr>
-  <tr>
+  <tr style="height:20px;">
     <td style="font-size:7pt;">${s.tecnico||''}</td>
-    <td>&nbsp;</td>
-    <td style="font-size:7pt;">${s.tecnicoCedula||''}</td>
-    <td style="font-size:7pt;">${s.horaEntrada||''}</td>
-    <td style="font-size:7pt;">${s.horaSalida||''}</td>
-    <td style="font-size:7pt;">
-      Nombre: ${s.funcNombre||''}<br>
-      Teléfono: ${s.funcTel||''}<br>
-      Cargo: ${s.funcCargo||''}
-    </td>
+    <td style="font-size:7pt;">${s.tecnicoCargo||'Técnico'}</td>
+    <td style="font-size:7pt;text-align:center;">${s.tecnicoCedula||''}</td>
+    <td style="font-size:7pt;text-align:center;">${s.horaEntrada||''}</td>
+    <td style="font-size:7pt;text-align:center;">${s.horaSalida||''}</td>
+    <td style="font-size:7pt;">Nombre:</td>
+    <td style="font-size:7pt;">${s.funcNombre||''}</td>
+  </tr>
+  <tr style="height:18px;">
+    <td></td><td></td><td></td><td></td><td></td>
+    <td style="font-size:7pt;">Teléfono:</td>
+    <td style="font-size:7pt;">${s.funcTel||''}</td>
+  </tr>
+  <tr style="height:18px;">
+    <td></td><td></td><td></td><td></td><td></td>
+    <td style="font-size:7pt;">Cargo:</td>
+    <td style="font-size:7pt;">${s.funcCargo||''}</td>
   </tr>
   <tr>
-    <td colspan="3" style="padding:4px;height:65px;vertical-align:bottom;text-align:center;">
+    <td colspan="4" style="padding:4px;height:80px;vertical-align:bottom;text-align:center;">
       <div style="font-family:'Meddon',cursive;font-size:16pt;color:#1a1a6e;">${s.tecnico||''}</div>
       <div style="border-top:1px solid #000;margin-top:2px;font-size:6.5pt;font-weight:700;">Firma Técnico Encargado / Cargo: ${s.tecnicoCargo||'Técnico'}</div>
     </td>
-    <td colspan="3" style="padding:4px;height:65px;vertical-align:middle;text-align:center;">
+    <td colspan="3" style="padding:4px;height:80px;vertical-align:middle;text-align:center;position:relative;">
       ${selloBase64?`<img src="${selloBase64}" style="max-height:60px;">`:
         s.firmaJefe?`<img src="${s.firmaJefe}" style="max-height:55px;">`:
         '<div style="color:#aaa;font-size:7pt;">Pendiente de aprobación</div>'}
@@ -1260,7 +1282,7 @@ function manejarRutaTienda() {
       ${eqs.map(e=>{
         const inc=getServiciosEquipo(e.id);
         return `<div style="background:white;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #e0e0e0;">
-          <div style="font-weight:700;">${e.nombre||'Sin nombre'}</div>
+          <div style="font-weight:700;">${e.tipo||e.nombre||'Sin nombre'}</div>
           ${e.descripcion?`<div style="font-size:.76rem;color:#555;">${e.descripcion}</div>`:''}
           <div style="font-size:.72rem;color:#888;margin-top:4px;">${inc.length} incidencia(s)</div>
         </div>`;
@@ -1459,6 +1481,11 @@ window.limpiarFirmaOT        = limpiarFirmaOT;
 window.previewFotoOT         = previewFotoOT;
 window.filtrarClientes       = filtrarClientes;
 window.filtrarTiendasDetalle = filtrarTiendasDetalle;
+window.filtrarActivos = function(v) {
+    document.querySelectorAll('.ec[data-activo]').forEach(el => {
+        el.style.display = (el.dataset.activo||'').includes(v.toLowerCase()) ? '' : 'none';
+    });
+};
 window.descargarHistorialTienda = descargarHistorialTienda;
 
 // ============================================
