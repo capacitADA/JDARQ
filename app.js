@@ -849,6 +849,16 @@ async function guardarIncidencia(eid, generarPDF) {
 // PDF
 // ============================================
 async function generarPDFOrden(s) {
+    // Cargar fuente Meddon como base64
+    let meddonB64 = '';
+    try {
+        const resp = await fetch(FUENTE_FIRMA);
+        const buf  = await resp.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let bin = '';
+        bytes.forEach(b => bin += String.fromCharCode(b));
+        meddonB64 = 'data:font/truetype;base64,' + btoa(bin);
+    } catch(e) { console.warn('No se pudo cargar Meddon:', e); }
     const e   = getEq(s.equipoId);
     const hoy = new Date(s.creadoEn||Date.now());
     const dd  = String(hoy.getDate()).padStart(2,'0');
@@ -882,7 +892,7 @@ async function generarPDFOrden(s) {
 <html lang="es"><head><meta charset="UTF-8">
 <title>OT_${s.idMtto||''}</title>
 <style>
-@font-face{font-family:'Meddon';src:url('${FUENTE_FIRMA}') format('truetype');}
+@font-face{font-family:'Meddon';src:url('${meddonB64}') format('truetype');}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;width:794px;}
 .blk{border:2px solid #000;border-collapse:collapse;width:100%;margin-top:-2px;}
