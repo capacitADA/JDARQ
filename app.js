@@ -388,7 +388,7 @@ function renderDetalleTienda() {
 ${eqs.map(e=>{
     const ns = getServiciosEquipo(e.id).length;
     const ult = getServiciosEquipo(e.id)[0];
-    return `<div class="ec">
+    return `<div class="ec" data-activo="${(e.tipo||e.nombre||'sin nombre').toLowerCase()}">
         <div style="display:flex;justify-content:space-between;">
           <div>
             <div class="ec-name">${e.tipo||e.nombre||'Sin nombre'}</div>
@@ -827,18 +827,17 @@ async function guardarIncidencia(eid, generarPDF) {
         toast('✅ Incidencia guardada: ' + idMtto);
         fotosOT = [null,null];
         closeModal();
-        if(generarPDF) await generarPDFOrden({...payload, id: sid});
+        await cargarDatos();
         setTimeout(()=>{
             showModal(`<div class="modal" style="max-width:320px;">
-              <div class="modal-h" style="background:var(--green);"><h3 style="color:#C9A84C;">✅ ${idMtto} guardada</h3><button class="xbtn" style="color:white;" onclick="closeModal()">✕</button></div>
+              <div class="modal-h" style="background:#1a1a1a;border-bottom:2px solid #C9A84C;"><h3 style="color:#C9A84C;">✅ ${idMtto} guardada</h3><button class="xbtn" style="color:white;" onclick="closeModal()">✕</button></div>
               <div class="modal-b" style="text-align:center;padding:1.25rem;">
-                <p style="font-size:.85rem;margin-bottom:1rem;">¿Generar QR para que el jefe de tienda apruebe?</p>
-                <button class="btn btn-blue" style="width:100%;margin-bottom:.5rem;" onclick="generarQRAprobacion('${sid}');closeModal();">📱 Generar QR</button>
+                <p style="font-size:.85rem;margin-bottom:1rem;">Muestra este QR al jefe de tienda para que apruebe y firme.</p>
+                <button class="btn" style="background:#C9A84C;color:#1a1a1a;font-weight:700;width:100%;margin-bottom:.5rem;padding:.65rem;border:none;border-radius:10px;cursor:pointer;font-size:.9rem;" onclick="generarQRAprobacion('${sid}');closeModal();">📱 Generar QR de aprobación</button>
                 <button class="btn btn-gray" style="width:100%;" onclick="closeModal()">Después</button>
               </div>
             </div>`);
         }, 400);
-        cargarDatos();
     } catch(err) {
         console.error('Error guardando incidencia:', err);
         toast('⚠️ Error: '+err.message);
