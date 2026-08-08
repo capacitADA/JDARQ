@@ -1031,25 +1031,33 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
     </td>
     <td colspan="3" style="padding:4px;height:80px;vertical-align:middle;text-align:center;position:relative;">
       ${selloBase64?`<img src="${selloBase64}" style="max-height:60px;">`:
-        s.firmaJefe?`<img src="${s.firmaJefe}" style="max-height:55px;">`:
+        
         '<div style="color:#aaa;font-size:7pt;">Pendiente de aprobación</div>'}
     </td>
   </tr>
 </table>
 
 ${s.fotos?.filter(Boolean).length?`
-<div style="page-break-before:always;"></div>
-<table class="blk">
-  <tr><td colspan="2" class="hd">EVIDENCIAS FOTOGRÁFICAS — OT ${s.idMtto||''}</td></tr>
-  <tr>
-    <td style="width:50%;text-align:center;font-weight:700;font-size:7pt;padding:3px;">ANTES</td>
-    <td style="width:50%;text-align:center;font-weight:700;font-size:7pt;padding:3px;">DESPUÉS</td>
-  </tr>
-  <tr>
-    <td style="height:380px;text-align:center;vertical-align:middle;padding:8px;">${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:370px;object-fit:contain;">`:''}</td>
-    <td style="height:380px;text-align:center;vertical-align:middle;padding:8px;">${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:370px;object-fit:contain;">`:''}</td>
-  </tr>
-</table>`:''}
+<div style="page-break-before:always;padding:12px;font-family:Arial,sans-serif;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
+    <tr><td style="background:#1a1a1a;color:#C9A84C;font-weight:700;text-align:center;font-size:9pt;padding:5px;border:2px solid #000;">EVIDENCIAS FOTOGRÁFICAS — OT ${s.idMtto||''} · ${s.tiendaNombre||s.tiendaCodigo||''}</td></tr>
+  </table>
+  <table style="width:100%;border-collapse:collapse;">
+    <tr>
+      <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">ANTES</td>
+      <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">DESPUÉS</td>
+    </tr>
+    <tr style="height:550px;">
+      <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
+        ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:530px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#ccc;">Sin foto</span>'}
+      </td>
+      <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
+        ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:530px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#ccc;">Sin foto</span>'}
+      </td>
+    </tr>
+  </table>
+  <div style="margin-top:6px;font-size:7pt;color:#555;text-align:center;">Técnico: ${s.tecnico||''} · CC ${s.tecnicoCedula||''} · Fecha: ${s.fecha||''}</div>
+</div>`:''}
 
 <div style="font-size:6pt;color:#c0392b;text-align:center;margin-top:6px;font-style:italic;">
 Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni enmendados; este documento debe entregarse diligenciado en su totalidad de lo contrario no será válido.
@@ -1201,7 +1209,7 @@ async function cargarAprobacionQR(token) {
             <label style="display:block;font-size:.7rem;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:4px;">Tu número de celular</label>
             <input id="jefeCel" type="tel" placeholder="3XX XXX XXXX" style="width:100%;border:1.5px solid #e0e0e0;border-radius:8px;padding:.5rem .75rem;font-size:.9rem;margin-bottom:10px;">
             <label style="display:block;font-size:.7rem;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:4px;">Tu firma</label>
-            <canvas id="firmaJefeQR" style="width:100%;height:110px;border:2px dashed #e0e0e0;border-radius:8px;background:white;touch-action:none;display:block;"></canvas>
+            <canvas id="firmaJefeQR" width="340" height="110" style="width:100%;height:110px;border:2px dashed #e0e0e0;border-radius:8px;background:white;touch-action:none;display:block;"></canvas>
             <button onclick="document.getElementById('firmaJefeQR').getContext('2d').clearRect(0,0,1000,300)" style="background:none;border:1px solid #e0e0e0;border-radius:6px;padding:4px 10px;font-size:.72rem;margin-top:4px;cursor:pointer;">Limpiar</button>
           </div>
           <div style="font-size:.7rem;color:#94a3b8;margin-bottom:12px;">Al firmar confirmas que el servicio fue realizado a satisfacción. Tu celular, firma y ubicación quedan registrados.</div>
@@ -1211,17 +1219,17 @@ async function cargarAprobacionQR(token) {
 }
 
 window.confirmarAprobacionQR = async (token,sid) => {
-    const cel=document.getElementById('jefeCel')?.value?.trim();
+    const cel=document.getElementById('qrJefeCel')?.value?.trim()||document.getElementById('jefeCel')?.value?.trim();
     const canvas=document.getElementById('firmaJefeQR');
     if(!cel){alert('Ingresa tu número de celular');return;}
-    const firma=canvas?canvas.toDataURL('image/png'):'';
+    const firma=canvas&&canvas.width>0?canvas.toDataURL('image/png'):'';
     let gps=null;
     try{gps=await new Promise(res=>navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude}),()=>res(null),{timeout:5000}));}catch(e){}
     try {
         await updateDoc(doc(db,'servicios',sid),{aprobado:true,pendienteAprobacion:false,aprobadoEn:new Date().toISOString(),firmaJefeQR:firma,celularJefe:cel,gpsJefe:gps,userAgentJefe:navigator.userAgent});
         await updateDoc(doc(db,'aprobaciones',token),{usado:true});
         document.getElementById('aprobContenido').innerHTML=`<div style="text-align:center;padding:2rem;"><div style="font-size:3rem;margin-bottom:.75rem;">✅</div><div style="font-weight:700;font-size:1.1rem;color:#16a34a;">¡Aprobado!</div><div style="font-size:.82rem;color:#555;margin-top:.35rem;">Orden cerrada correctamente</div></div>`;
-    } catch(e){alert('Error al aprobar: '+e.message);}
+    } catch(e){console.error('Error aprobación:',e);alert('Error al aprobar: '+e.message);}
 };
 
 // ============================================
