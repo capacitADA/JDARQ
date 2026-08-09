@@ -891,7 +891,7 @@ async function generarPDFOrden(s) {
 <html lang="es"><head><meta charset="UTF-8">
 <title>OT_${s.idMtto||''}</title>
 <style>
-@font-face{font-family:'Meddon';src:url('${meddonB64}') format('truetype');}
+@font-face{font-family:'Meddon';src:url('https://raw.githubusercontent.com/capacitADA/JDARQ/main/Meddon-Regular.ttf') format('truetype');}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;width:794px;}
 .blk{border:2px solid #000;border-collapse:collapse;width:100%;margin-top:-2px;}
