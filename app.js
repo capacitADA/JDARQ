@@ -848,16 +848,16 @@ async function guardarIncidencia(eid, generarPDF) {
 // PDF
 // ============================================
 async function generarPDFOrden(s) {
-    // Cargar fuente Meddon como base64
-    let meddonB64 = '';
-    try {
-        const resp = await fetch(FUENTE_FIRMA);
-        const buf  = await resp.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let bin = '';
-        bytes.forEach(b => bin += String.fromCharCode(b));
-        meddonB64 = 'data:font/truetype;base64,' + btoa(bin);
-    } catch(e) { console.warn('No se pudo cargar Meddon:', e); }
+    // Buscar firma del jefe en aprobaciones
+    let firmaJefe = s.firmaJefeQR || '';
+    if(!firmaJefe && s.aprobado) {
+        try {
+            const apSnap = await getDocs(query(collection(db,'aprobaciones')));
+            const apDoc = apSnap.docs.find(d => d.data().servicioId === s.id);
+            if(apDoc) firmaJefe = apDoc.data().confirmarQRAprobacion || apDoc.data().firmaJefeQR || '';
+        } catch(e) { console.warn('No se pudo cargar firma:', e); }
+    }
+    // Meddon se carga directamente en el @font-face del HTML
     const e   = getEq(s.equipoId);
     const hoy = new Date(s.creadoEn||Date.now());
     const dd  = String(hoy.getDate()).padStart(2,'0');
@@ -1218,7 +1218,7 @@ async function cargarAprobacionQR(token) {
 }
 
 window.confirmarAprobacionQR = async (token,sid) => {
-    const cel=document.getElementById('qrJefeCel')?.value?.trim()||document.getElementById('jefeCel')?.value?.trim();
+    const cel=document.getElementById('jefeCel')?.value?.trim();
     const canvas=document.getElementById('firmaJefeQR');
     if(!cel){alert('Ingresa tu número de celular');return;}
     const firma=canvas&&canvas.width>0?canvas.toDataURL('image/png'):'';
