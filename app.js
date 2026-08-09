@@ -848,15 +848,31 @@ async function guardarIncidencia(eid, generarPDF) {
 // PDF
 // ============================================
 async function generarPDFOrden(s) {
-    // Buscar firma del jefe en aprobaciones
+    // 1. Buscar firma del jefe en aprobaciones
     let firmaJefe = s.firmaJefeQR || '';
     if(!firmaJefe && s.aprobado) {
         try {
-            const apSnap = await getDocs(query(collection(db,'aprobaciones')));
+            const apSnap = await getDocs(collection(db,'aprobaciones'));
             const apDoc = apSnap.docs.find(d => d.data().servicioId === s.id);
             if(apDoc) firmaJefe = apDoc.data().confirmarQRAprobacion || apDoc.data().firmaJefeQR || '';
-        } catch(e) { console.warn('No se pudo cargar firma:', e); }
+        } catch(e) { console.warn('No se pudo cargar firma jefe:', e); }
     }
+
+    // 2. Generar firma del técnico con Meddon como imagen PNG
+    let firmaTecBase64 = '';
+    try {
+        const font = new FontFace('Meddon', 'url(https://raw.githubusercontent.com/capacitADA/JDARQ/main/Meddon-Regular.ttf)');
+        await font.load();
+        document.fonts.add(font);
+        const c = document.createElement('canvas');
+        c.width = 340; c.height = 70;
+        const ctx = c.getContext('2d');
+        ctx.font = '32px Meddon';
+        ctx.fillStyle = '#1a1a6e';
+        ctx.fillText(s.tecnico||'', 10, 48);
+        firmaTecBase64 = c.toDataURL('image/png');
+    } catch(e) { console.warn('Meddon no cargó:', e); firmaTecBase64 = ''; }
+
     // Meddon se carga directamente en el @font-face del HTML
     const e   = getEq(s.equipoId);
     const hoy = new Date(s.creadoEn||Date.now());
@@ -1025,7 +1041,9 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
   </tr>
   <tr>
     <td colspan="4" style="padding:4px;height:80px;vertical-align:bottom;text-align:center;">
-      <div style="font-family:'Meddon',cursive;font-size:16pt;color:#1a1a6e;">${s.tecnico||''}</div>
+      ${firmaTecBase64
+        ? `<img src="${firmaTecBase64}" style="height:50px;display:block;">`
+        : `<div style="font-family:'Meddon',cursive;font-size:16pt;color:#1a1a6e;">${s.tecnico||''}</div>`}
       <div style="border-top:1px solid #000;margin-top:2px;font-size:6.5pt;font-weight:700;">Firma Técnico Encargado / Cargo: ${s.tecnicoCargo||'Técnico'}</div>
     </td>
     <td colspan="3" style="padding:4px;height:80px;vertical-align:middle;text-align:center;position:relative;">
