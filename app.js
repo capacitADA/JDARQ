@@ -1085,23 +1085,68 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
     try {
         if(!window.html2canvas) await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
         if(!window.jspdf)       await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-        await new Promise(r=>setTimeout(r,300));
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText='position:fixed;left:-9999px;top:0;width:794px;height:1200px;border:none;';
-        document.body.appendChild(iframe);
-        iframe.contentDocument.open();
-        iframe.contentDocument.write(html);
-        iframe.contentDocument.close();
-        await new Promise(r=>setTimeout(r,1200));
-        const canvas = await window.html2canvas(iframe.contentDocument.body,{scale:2.5,backgroundColor:'#fff',useCORS:true,allowTaint:true,logging:false,windowWidth:794});
-        document.body.removeChild(iframe);
+
+        // HTML página 1 — sin fotos
+        const html1 = html.replace(/<div style="page-break-before:always[\s\S]*?<\/div>`:''}/, '');
+
+        // HTML página 2 — solo fotos
+        const html2 = s.fotos?.filter(Boolean).length ? `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;background:#fff;padding:16px;width:794px;}table{width:100%;border-collapse:collapse;}</style>
+</head><body>
+<table style="margin-bottom:8px;">
+  <tr><td style="background:#1a1a1a;color:#C9A84C;font-weight:700;text-align:center;font-size:9pt;padding:5px;border:2px solid #000;">EVIDENCIAS FOTOGRÁFICAS — OT ${s.idMtto||''} · ${s.tiendaNombre||s.tiendaCodigo||''}</td></tr>
+</table>
+<table style="width:100%;border-collapse:collapse;height:700px;">
+  <tr>
+    <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">ANTES</td>
+    <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">DESPUÉS</td>
+  </tr>
+  <tr style="height:680px;">
+    <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
+      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:660px;object-fit:contain;display:block;margin:0 auto;">`:''}
+    </td>
+    <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
+      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:660px;object-fit:contain;display:block;margin:0 auto;">`:''}
+    </td>
+  </tr>
+</table>
+<div style="margin-top:6px;font-size:7pt;color:#555;text-align:center;">Técnico: ${s.tecnico||''} · CC ${s.tecnicoCedula||''} · Fecha: ${s.fecha||''}</div>
+</body></html>` : null;
+
+        const renderHtml = async (htmlStr) => {
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText='position:fixed;left:-9999px;top:0;width:794px;height:1400px;border:none;';
+            document.body.appendChild(iframe);
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(htmlStr);
+            iframe.contentDocument.close();
+            await new Promise(r=>setTimeout(r,1500));
+            const c = await window.html2canvas(iframe.contentDocument.body,{scale:2.5,backgroundColor:'#fff',useCORS:true,allowTaint:true,logging:false,windowWidth:794});
+            document.body.removeChild(iframe);
+            return c;
+        };
+
         const {jsPDF} = window.jspdf;
         const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
-        const imgW=210, imgH=(canvas.height*imgW)/canvas.width;
-        pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,imgW,imgH);
+
+        // Página 1
+        const c1 = await renderHtml(html1);
+        const imgW = 210;
+        const imgH1 = (c1.height * imgW) / c1.width;
+        pdf.addImage(c1.toDataURL('image/png'),'PNG',0,0,imgW,Math.min(imgH1,297));
+
+        // Página 2 — fotos
+        if(html2) {
+            pdf.addPage();
+            const c2 = await renderHtml(html2);
+            const imgH2 = (c2.height * imgW) / c2.width;
+            pdf.addImage(c2.toDataURL('image/png'),'PNG',0,0,imgW,Math.min(imgH2,297));
+        }
+
         pdf.save(`OT_${s.idMtto||s.id||'JD'}_${s.tiendaCodigo||''}.pdf`);
         toast('✅ PDF descargado');
     } catch(err) {
+        console.error(err);
         const blob=new Blob([html],{type:'text/html;charset=utf-8'});
         const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
         a.download=`OT_${s.idMtto||'JD'}.html`; a.click();
