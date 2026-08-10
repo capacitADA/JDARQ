@@ -1055,7 +1055,8 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
 </table>
 
 ${s.fotos?.filter(Boolean).length?`
-<div style="page-break-before:always;padding:12px;font-family:Arial,sans-serif;">
+<!-- INICIO_FOTOS -->
+<div style="padding:12px;font-family:Arial,sans-serif;">
   <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
     <tr><td style="background:#1a1a1a;color:#C9A84C;font-weight:700;text-align:center;font-size:9pt;padding:5px;border:2px solid #000;">EVIDENCIAS FOTOGRÁFICAS — OT ${s.idMtto||''} · ${s.tiendaNombre||s.tiendaCodigo||''}</td></tr>
   </table>
@@ -1086,8 +1087,11 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
         if(!window.html2canvas) await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
         if(!window.jspdf)       await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
 
-        // HTML página 1 — sin fotos
-        const html1 = html.replace(/<div style="page-break-before:always[\s\S]*?<\/div>`:''}/, '');
+        // HTML página 1 — sin fotos (cortar en el marcador)
+        const MARCADOR_FOTOS = '<!-- INICIO_FOTOS -->';
+        const html1 = html.includes(MARCADOR_FOTOS) 
+            ? html.substring(0, html.indexOf(MARCADOR_FOTOS)) + '</body></html>'
+            : html;
 
         // HTML página 2 — solo fotos
         const html2 = s.fotos?.filter(Boolean).length ? `<!DOCTYPE html><html><head><meta charset="UTF-8">
