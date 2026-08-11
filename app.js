@@ -1054,28 +1054,6 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
   </tr>
 </table>
 
-${s.fotos?.filter(Boolean).length?`
-<!-- INICIO_FOTOS -->
-<div style="padding:12px;font-family:Arial,sans-serif;">
-  <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
-    <tr><td style="background:#1a1a1a;color:#C9A84C;font-weight:700;text-align:center;font-size:9pt;padding:5px;border:2px solid #000;">EVIDENCIAS FOTOGRÁFICAS — OT ${s.idMtto||''} · ${s.tiendaNombre||s.tiendaCodigo||''}</td></tr>
-  </table>
-  <table style="width:100%;border-collapse:collapse;">
-    <tr>
-      <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">ANTES</td>
-      <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">DESPUÉS</td>
-    </tr>
-    <tr style="height:550px;">
-      <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
-        ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:530px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#ccc;">Sin foto</span>'}
-      </td>
-      <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
-        ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:530px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#ccc;">Sin foto</span>'}
-      </td>
-    </tr>
-  </table>
-  <div style="margin-top:6px;font-size:7pt;color:#555;text-align:center;">Técnico: ${s.tecnico||''} · CC ${s.tecnicoCedula||''} · Fecha: ${s.fecha||''}</div>
-</div>`:''}
 
 <div style="font-size:6pt;color:#c0392b;text-align:center;margin-top:6px;font-style:italic;">
 Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni enmendados; este documento debe entregarse diligenciado en su totalidad de lo contrario no será válido.
