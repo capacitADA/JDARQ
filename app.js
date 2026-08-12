@@ -1124,25 +1124,18 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
         const c1 = await renderHtml(html1);
         const imgW = 210;
         const imgH1 = (c1.height * imgW) / c1.width;
-        // Si el contenido es más alto que A4, agregar páginas adicionales
-        if(imgH1 <= 297) {
-            pdf.addImage(c1.toDataURL('image/png'),'PNG',0,0,imgW,imgH1);
-        } else {
-            // Dividir en múltiples páginas A4
-            const pageH = 297;
-            const totalPages = Math.ceil(imgH1 / pageH);
-            for(let p=0; p<totalPages; p++) {
-                if(p>0) pdf.addPage();
-                pdf.addImage(c1.toDataURL('image/png'),'PNG',0,-(p*pageH),imgW,imgH1);
-            }
-        }
+        const pageH = 297;
 
-        // Página 2 — fotos
+        // Renderizar acta completa en una sola imagen escalada a A4
+        // Si es más alta, se escala proporcionalmente para caber en una página
+        pdf.addImage(c1.toDataURL('image/png'),'PNG',0,0,imgW,Math.min(imgH1, pageH));
+
+        // Página de fotos — siempre en página nueva
         if(html2) {
             pdf.addPage();
             const c2 = await renderHtml(html2);
             const imgH2 = (c2.height * imgW) / c2.width;
-            pdf.addImage(c2.toDataURL('image/png'),'PNG',0,0,imgW,Math.min(imgH2,297));
+            pdf.addImage(c2.toDataURL('image/png'),'PNG',0,0,imgW,Math.min(imgH2, pageH));
         }
 
         pdf.save(`OT_${s.idMtto||s.id||'JD'}_${s.tiendaCodigo||''}.pdf`);
