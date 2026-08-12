@@ -853,9 +853,18 @@ async function generarPDFOrden(s) {
     if(!firmaJefe && s.aprobado) {
         try {
             const apSnap = await getDocs(collection(db,'aprobaciones'));
+            console.log('Buscando firma para servicioId:', s.id);
+            console.log('Aprobaciones encontradas:', apSnap.docs.length);
+            apSnap.docs.forEach(d => console.log('  -', d.id, 'servicioId:', d.data().servicioId));
             const apDoc = apSnap.docs.find(d => d.data().servicioId === s.id);
-            if(apDoc) firmaJefe = apDoc.data().confirmarQRAprobacion || apDoc.data().firmaJefeQR || '';
-        } catch(e) { console.warn('No se pudo cargar firma jefe:', e); }
+            if(apDoc) {
+                const data = apDoc.data();
+                firmaJefe = data.confirmarQRAprobacion || data.firmaJefeQR || '';
+                console.log('Firma encontrada:', firmaJefe ? 'SÍ ('+firmaJefe.length+' chars)' : 'NO');
+            } else {
+                console.warn('No se encontró aprobación para servicioId:', s.id);
+            }
+        } catch(e) { console.warn('Error cargando firma:', e); }
     }
 
     // 2. Generar firma del técnico con Meddon como imagen PNG
@@ -1083,12 +1092,12 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
     <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">ANTES</td>
     <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">DESPUÉS</td>
   </tr>
-  <tr style="height:680px;">
+  <tr style="height:340px;">
     <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
-      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:660px;object-fit:contain;display:block;margin:0 auto;">`:''}
+      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:320px;object-fit:contain;display:block;margin:0 auto;">`:''}
     </td>
     <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
-      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:660px;object-fit:contain;display:block;margin:0 auto;">`:''}
+      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:320px;object-fit:contain;display:block;margin:0 auto;">`:''}
     </td>
   </tr>
 </table>
@@ -1115,7 +1124,18 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
         const c1 = await renderHtml(html1);
         const imgW = 210;
         const imgH1 = (c1.height * imgW) / c1.width;
-        pdf.addImage(c1.toDataURL('image/png'),'PNG',0,0,imgW,Math.min(imgH1,297));
+        // Si el contenido es más alto que A4, agregar páginas adicionales
+        if(imgH1 <= 297) {
+            pdf.addImage(c1.toDataURL('image/png'),'PNG',0,0,imgW,imgH1);
+        } else {
+            // Dividir en múltiples páginas A4
+            const pageH = 297;
+            const totalPages = Math.ceil(imgH1 / pageH);
+            for(let p=0; p<totalPages; p++) {
+                if(p>0) pdf.addPage();
+                pdf.addImage(c1.toDataURL('image/png'),'PNG',0,-(p*pageH),imgW,imgH1);
+            }
+        }
 
         // Página 2 — fotos
         if(html2) {
