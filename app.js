@@ -925,207 +925,193 @@ async function generarPDFOrden(s) {
         try { selloBase64 = await cargarImgBase64(SELLO_URL); } catch(e) {}
     }
 
-    function chk(val, lista) {
-        return (lista||[]).includes(val)
-            ? '<span style="display:inline-block;min-width:13px;height:13px;line-height:13px;padding:0 1px;background:#000;color:#fff;font-weight:900;font-size:9pt;text-align:center;border-radius:2px;">X</span>'
-            : '<span style="display:inline-block;min-width:13px;height:13px;border:1px solid #999;border-radius:2px;">&nbsp;</span>';
-    }
-
-    const lineas = (txt, n) => {
-        const arr = (txt||'').split('\n').concat(Array(n).fill('')).slice(0,n);
-        return arr.map((t,i)=>`<tr style="height:15px;border-bottom:${i===n-1?'2px':'1px'} solid ${i===n-1?'#000':'#ccc'};"><td style="padding:1px 4px;font-size:8pt;">${t}&nbsp;</td></tr>`).join('');
-    };
-
-    const evalRows = PARAMS_EVAL.map(p=>p.items.map((item,i)=>`
-        <tr style="border-bottom:1px solid #eee;">
-          <td style="padding:2px 5px;font-size:7pt;width:80px;">${i===0?`<strong>${p.cat}</strong>`:''}</td>
-          <td style="padding:2px 5px;font-size:7pt;">${item}</td>
-          <td style="text-align:center;font-size:8pt;">X</td>
-          <td style="text-align:center;font-size:8pt;">&nbsp;</td>
-        </tr>`).join('')).join('');
-
-    const html = `<!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8">
-<title>OT_${s.idMtto||''}</title>
-<style>
-@font-face{font-family:'Meddon';src:url('https://raw.githubusercontent.com/capacitADA/JDARQ/main/Meddon-Regular.ttf') format('truetype');}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:Arial,sans-serif;background:#fff;padding:7px;font-size:8pt;width:794px;}
-.blk{border:2px solid #000;border-collapse:collapse;width:100%;margin-top:-2px;}
-.blk td,.blk th{border:1px solid #000;padding:2px 5px;vertical-align:middle;font-size:7.5pt;}
-.hd{font-weight:700;text-align:center;font-size:8.5pt;padding:3px;background:#eee;}
-.lbl{font-weight:700;white-space:nowrap;width:1%;}
-</style></head><body>
-
-<table style="width:100%;border-collapse:collapse;border:2px solid #000;margin-bottom:-2px;">
-<tr>
-  <td style="width:70px;text-align:center;padding:4px;border-right:1px solid #000;">
-    <img src="${LOGO_URL}" style="height:40px;" crossorigin="anonymous" onerror="this.style.display='none'">
-  </td>
-  <td style="text-align:center;font-weight:700;font-size:10pt;">ORDEN DE TRABAJO MANTENIMIENTO</td>
-</tr>
-</table>
-
-<table class="blk">
-  <tr><td colspan="4" class="hd">INFORMACIÓN CONTRATISTA</td></tr>
-  <tr>
-    <td class="lbl" style="width:20%;">Razón Social:</td>
-    <td style="width:30%;">${EMPRESA_NOMBRE}</td>
-    <td class="lbl" style="width:12%;">N° NIT:</td>
-    <td>${EMPRESA_NIT}</td>
-  </tr>
-  <tr>
-    <td class="lbl">Contacto:</td>
-    <td>${EMPRESA_CONTACTO}</td>
-    <td class="lbl">Teléfono:</td>
-    <td>${EMPRESA_TEL}</td>
-  </tr>
-</table>
-
-<table class="blk">
-  <tr><td colspan="6" class="hd">INFORMACIÓN SOLICITANTE Y TIENDA D1</td></tr>
-  <tr>
-    <td class="lbl" style="width:17%;">Nombre tienda:</td>
-    <td style="width:20%;">${s.tiendaNombre||''}</td>
-    <td class="lbl" style="width:13%;">Cód. Tienda:</td>
-    <td style="width:12%;">${s.tiendaCodigo||''}</td>
-    <td class="lbl" style="width:13%;">ID Incidencia:</td>
-    <td style="width:25%;">${s.idMtto||''}</td>
-  </tr>
-  <tr>
-    <td class="lbl">Nombre solicitante:</td>
-    <td>${s.funcNombre||''}</td>
-    <td class="lbl">Activo:</td>
-    <td>${s.equipoNombre||e?.tipo||e?.nombre||''}</td>
-    <td class="lbl">Fecha:</td>
-    <td>${dd}/${mes.slice(0,3)}/${aa}</td>
-  </tr>
-  <tr>
-    <td class="lbl">Ciudad:</td>
-    <td>${s.tiendaMunicipio||''}</td>
-    <td class="lbl">Departamento:</td>
-    <td colspan="3">${s.tiendaDepartamento||''}</td>
-  </tr>
-</table>
-
-<table class="blk">
-  <tr><td colspan="8" class="hd">TIPO DE ASISTENCIA (Marque con una X)</td></tr>
-  <tr>${TIPOS_ASISTENCIA.map(t=>`<td style="text-align:center;font-size:7pt;">${t} ${chk(t,[s.tipoAsistencia])}</td>`).join('')}</tr>
-</table>
-
-<table class="blk">
-  <tr><td colspan="5" class="hd">TIPO DE FALLA (Marque con una X)</td></tr>
-  <tr>${TIPOS_FALLA.slice(0,5).map(f=>`<td style="text-align:center;font-size:7pt;">${f} ${chk(f,s.tiposFalla)}</td>`).join('')}</tr>
-  <tr>${TIPOS_FALLA.slice(5).map(f=>`<td style="text-align:center;font-size:7pt;">${f} ${chk(f,s.tiposFalla)}</td>`).join('')}</tr>
-</table>
-
-<table class="blk"><tr><td class="hd">Descripción detallada de la solicitud:</td></tr></table>
-<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.descripcion,3)}</table>
-
-<table class="blk"><tr><td class="hd">Actividades ejecutadas:</td></tr></table>
-<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.actividades,4)}</table>
-
-<table class="blk"><tr><td class="hd">Repuestos cambiados:</td></tr></table>
-<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.repuestos,2)}</table>
-
-<table class="blk"><tr><td class="hd">Recomendaciones:</td></tr></table>
-<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.recomendaciones,2)}</table>
-
-<table class="blk">
-  <tr><td colspan="4" class="hd">EVALUACIÓN DEL SERVICIO</td></tr>
-  <tr>
-    <th style="width:80px;font-size:7pt;">Parámetro</th>
-    <th style="font-size:7pt;">Descripción</th>
-    <th style="width:30px;text-align:center;font-size:7pt;">SI</th>
-    <th style="width:30px;text-align:center;font-size:7pt;">NO</th>
-  </tr>
-  ${evalRows}
-</table>
-
-<table class="blk">
-  <tr><td colspan="4" class="hd">CALIFICA MI SERVICIO (Marque con una X)</td></tr>
-  <tr>
-    ${[
-      {v:'Excelente', face:'<circle cx="17" cy="17" r="15" fill="#fff" stroke="#000" stroke-width="1.6"/><circle cx="11" cy="14" r="1.6" fill="#000"/><circle cx="23" cy="14" r="1.6" fill="#000"/><path d="M9 20 Q17 27 25 20" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>'},
-      {v:'Bueno', face:'<circle cx="17" cy="17" r="15" fill="#fff" stroke="#000" stroke-width="1.6"/><circle cx="11" cy="14" r="1.6" fill="#000"/><circle cx="23" cy="14" r="1.6" fill="#000"/><line x1="9" y1="22" x2="25" y2="22" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>'},
-      {v:'Malo', face:'<circle cx="17" cy="17" r="15" fill="#fff" stroke="#000" stroke-width="1.6"/><circle cx="11" cy="14" r="1.6" fill="#000"/><circle cx="23" cy="14" r="1.6" fill="#000"/><path d="M9 24 Q17 17 25 24" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>'}
-    ].map(o=>{
-      const marcado = s.calificacion===o.v;
-      return `<td style="text-align:center;width:22%;padding:5px 2px;">
-        <div style="display:inline-block;padding:3px;border-radius:50%;${marcado?'border:2.5px solid #c0392b;':'border:2.5px solid transparent;'}">
-          <svg width="34" height="34" viewBox="0 0 34 34">${o.face}</svg>
-        </div>
-        <div style="font-size:7.5pt;font-weight:${marcado?'900':'400'};margin-top:1px;">${o.v} ${marcado?'<span style="color:#c0392b;">✔</span>':''}</div>
-      </td>`;
-    }).join('')}
-    <td style="width:34%;font-size:6.3pt;text-align:left;padding:4px 6px;vertical-align:middle;border-left:2px solid #000;">
-      Cualquier queja, reclamo o sugerencia comuníquese con el área de mantenimiento. No olvide calificar el servicio.
-    </td>
-  </tr>
-</table>
-
-<table class="blk">
-  <tr><td colspan="7" class="hd">CONSTANCIA DE ASISTENCIA REALIZADA</td></tr>
-  <tr>
-    <th style="font-size:7pt;width:22%;">Datos</th>
-    <th style="font-size:7pt;width:14%;">Contratistas</th>
-    <th style="font-size:7pt;width:11%;">Cédula</th>
-    <th style="font-size:7pt;width:10%;">H. Entrada</th>
-    <th style="font-size:7pt;width:10%;">H. Salida</th>
-    <th style="font-size:7pt;width:33%;" colspan="2">Funcionario de la tienda</th>
-  </tr>
-  <tr style="height:20px;">
-    <td style="font-size:7pt;">${s.tecnico||''}</td>
-    <td style="font-size:7pt;">${s.tecnicoCargo||'Técnico'}</td>
-    <td style="font-size:7pt;text-align:center;">${s.tecnicoCedula||''}</td>
-    <td style="font-size:7pt;text-align:center;">${s.horaEntrada||''}</td>
-    <td style="font-size:7pt;text-align:center;">${s.horaSalida||''}</td>
-    <td style="font-size:7pt;">Nombre:</td>
-    <td style="font-size:7pt;">${s.funcNombre||''}</td>
-  </tr>
-  <tr style="height:18px;">
-    <td></td><td></td><td></td><td></td><td></td>
-    <td style="font-size:7pt;">Teléfono:</td>
-    <td style="font-size:7pt;">${s.funcTel||''}</td>
-  </tr>
-  <tr style="height:18px;">
-    <td></td><td></td><td></td><td></td><td></td>
-    <td style="font-size:7pt;">Cargo:</td>
-    <td style="font-size:7pt;">${s.funcCargo||''}</td>
-  </tr>
-  <tr>
-    <td colspan="4" style="padding:4px;height:65px;vertical-align:bottom;text-align:center;">
-      ${firmaTecBase64
-        ? `<img src="${firmaTecBase64}" style="height:42px;display:block;">`
-        : `<div style="font-family:'Meddon',cursive;font-size:15pt;color:#1a1a6e;">${s.tecnico||''}</div>`}
-      <div style="border-top:1px solid #000;margin-top:2px;font-size:6.5pt;font-weight:700;">Firma Técnico Encargado / Cargo: ${s.tecnicoCargo||'Técnico'}</div>
-    </td>
-    <td colspan="3" style="padding:4px;height:65px;vertical-align:middle;text-align:center;position:relative;">
-      ${aprobadoConFirma
-        ? `<div style="position:relative;display:inline-block;">
-             <img src="${selloBase64}" style="max-height:50px;display:block;">
-             <img src="${firmaJefe}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-height:36px;max-width:105px;">
-           </div>`
-        : '<div style="color:#aaa;font-size:7pt;">Pendiente de aprobación</div>'}
-    </td>
-  </tr>
-</table>
-
-
-<div style="font-size:6pt;color:#c0392b;text-align:center;margin-top:6px;font-style:italic;">
-Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni enmendados; este documento debe entregarse diligenciado en su totalidad de lo contrario no será válido.
-</div>
-</body></html>`;
-
     toast('Generando PDF...');
     try {
+        if(!window.jspdf) await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        if(!window.jspdf?.jsPDF?.API?.autoTable) await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
         if(!window.html2canvas) await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-        if(!window.jspdf)       await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
 
-        // HTML página 1 — es el acta completa (las fotos van aparte, en html2)
-        const html1 = html;
+        const {jsPDF} = window.jspdf;
+        const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+        const M = 5, PW = 210, CW = PW - M*2;
+        let y = M;
 
-        // HTML página 2 — solo fotos
+        let logoB64 = ''; try { logoB64 = await cargarImgBase64(LOGO_URL); } catch(e){}
+
+        const styleHead = {fillColor:[238,238,238], textColor:20, fontStyle:'bold', halign:'center', fontSize:8};
+        const styleBody = {fontSize:7.5, cellPadding:1.3, lineColor:0, lineWidth:0.25, textColor:20};
+
+        // --- ENCABEZADO ---
+        pdf.setDrawColor(0); pdf.setLineWidth(0.4);
+        pdf.rect(M, y, CW, 12);
+        if(logoB64) { try{ pdf.addImage(logoB64,'PNG', M+2, y+1, 10, 10); }catch(e){} }
+        pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(20);
+        pdf.text('ORDEN DE TRABAJO MANTENIMIENTO', M + 15 + (CW-15)/2, y+7, {align:'center'});
+        y += 12;
+
+        // --- INFORMACIÓN CONTRATISTA ---
+        pdf.autoTable({
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', styles:styleBody,
+            head:[[{content:'INFORMACIÓN CONTRATISTA', colSpan:4, styles:styleHead}]],
+            body:[
+                [{content:'Razón Social:',styles:{fontStyle:'bold'}}, EMPRESA_NOMBRE, {content:'N° NIT:',styles:{fontStyle:'bold'}}, EMPRESA_NIT],
+                [{content:'Contacto:',styles:{fontStyle:'bold'}}, EMPRESA_CONTACTO, {content:'Teléfono:',styles:{fontStyle:'bold'}}, EMPRESA_TEL]
+            ],
+            columnStyles:{0:{cellWidth:CW*0.20},1:{cellWidth:CW*0.30},2:{cellWidth:CW*0.12},3:{cellWidth:CW*0.38}}
+        });
+        y = pdf.lastAutoTable.finalY;
+
+        // --- INFORMACIÓN SOLICITANTE Y TIENDA ---
+        pdf.autoTable({
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', styles:styleBody,
+            head:[[{content:'INFORMACIÓN SOLICITANTE Y TIENDA D1', colSpan:6, styles:styleHead}]],
+            body:[
+                [{content:'Nombre tienda:',styles:{fontStyle:'bold'}}, s.tiendaNombre||'', {content:'Cód. Tienda:',styles:{fontStyle:'bold'}}, s.tiendaCodigo||'', {content:'ID Incidencia:',styles:{fontStyle:'bold'}}, s.idMtto||''],
+                [{content:'Nombre solicitante:',styles:{fontStyle:'bold'}}, s.funcNombre||'', {content:'Activo:',styles:{fontStyle:'bold'}}, s.equipoNombre||e?.tipo||e?.nombre||'', {content:'Fecha:',styles:{fontStyle:'bold'}}, `${dd}/${mes.slice(0,3)}/${aa}`],
+                [{content:'Ciudad:',styles:{fontStyle:'bold'}}, s.tiendaMunicipio||'', {content:'Departamento:',styles:{fontStyle:'bold'}}, {content:s.tiendaDepartamento||'', colSpan:3}]
+            ],
+            columnStyles:{0:{cellWidth:CW*0.17},2:{cellWidth:CW*0.13},4:{cellWidth:CW*0.13}}
+        });
+        y = pdf.lastAutoTable.finalY;
+
+        // --- Tabla de casillas reutilizable (tipo asistencia / tipo falla) ---
+        function tablaChecklist(titulo, filas, seleccionados) {
+            const esArray = Array.isArray(seleccionados);
+            pdf.autoTable({
+                startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+                styles:{...styleBody, halign:'center', fontSize:6.8},
+                head:[[{content:titulo, colSpan:filas[0].length, styles:styleHead}]],
+                body:filas,
+                didDrawCell:(data)=>{
+                    if(data.row.section!=='body') return;
+                    const val = data.cell.raw;
+                    const marcado = esArray ? seleccionados.includes(val) : val===seleccionados;
+                    if(!marcado) return;
+                    pdf.setFillColor(0,0,0);
+                    pdf.rect(data.cell.x+0.4, data.cell.y+0.4, data.cell.width-0.8, data.cell.height-0.8, 'F');
+                    pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.8);
+                    pdf.text(String(val), data.cell.x+data.cell.width/2, data.cell.y+data.cell.height/2+0.9, {align:'center'});
+                    pdf.setTextColor(20); pdf.setFont('helvetica','normal');
+                }
+            });
+            y = pdf.lastAutoTable.finalY;
+        }
+        tablaChecklist('TIPO DE ASISTENCIA (Marque con una X)', [TIPOS_ASISTENCIA], s.tipoAsistencia);
+        tablaChecklist('TIPO DE FALLA (Marque con una X)', [TIPOS_FALLA.slice(0,5), TIPOS_FALLA.slice(5)], s.tiposFalla);
+
+        // --- Bloques de texto libre ---
+        function bloqueTexto(titulo, texto, nLineas) {
+            const lineasArr = (texto||'').split('\n').concat(Array(nLineas).fill('')).slice(0,nLineas);
+            pdf.autoTable({
+                startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+                styles:{fontSize:7.5, cellPadding:1, lineColor:0, lineWidth:0.25, minCellHeight:4.6, textColor:20},
+                head:[[{content:titulo, styles:{...styleHead, halign:'left'}}]],
+                body: lineasArr.map(l=>[l||' '])
+            });
+            y = pdf.lastAutoTable.finalY;
+        }
+        bloqueTexto('Descripción detallada de la solicitud:', s.descripcion, 3);
+        bloqueTexto('Actividades ejecutadas:', s.actividades, 3);
+        bloqueTexto('Repuestos cambiados:', s.repuestos, 2);
+        bloqueTexto('Recomendaciones:', s.recomendaciones, 2);
+
+        // --- EVALUACIÓN DEL SERVICIO ---
+        const evalBody = [];
+        PARAMS_EVAL.forEach(p => p.items.forEach((item,i) => evalBody.push([i===0?p.cat:'', item, 'X', ''])));
+        pdf.autoTable({
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+            styles:{fontSize:7, cellPadding:1, lineColor:0, lineWidth:0.25, textColor:20},
+            head:[
+                [{content:'EVALUACIÓN DEL SERVICIO', colSpan:4, styles:styleHead}],
+                [{content:'Parámetro',styles:{fontStyle:'bold',fontSize:7}},{content:'Descripción',styles:{fontStyle:'bold',fontSize:7}},{content:'SI',styles:{fontStyle:'bold',fontSize:7,halign:'center'}},{content:'NO',styles:{fontStyle:'bold',fontSize:7,halign:'center'}}]
+            ],
+            body: evalBody,
+            columnStyles:{0:{cellWidth:26,fontStyle:'bold'},2:{cellWidth:9,halign:'center',fontStyle:'bold'},3:{cellWidth:9,halign:'center'}}
+        });
+        y = pdf.lastAutoTable.finalY;
+
+        // --- CALIFICA MI SERVICIO (caritas dibujadas como vectores, no imagen) ---
+        pdf.autoTable({
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+            styles:{fontSize:6.5, cellPadding:1, minCellHeight:19, lineColor:0, lineWidth:0.25, valign:'middle'},
+            head:[[{content:'CALIFICA MI SERVICIO (Marque con una X)', colSpan:4, styles:styleHead}]],
+            body:[[ '', '', '', 'Cualquier queja, reclamo o sugerencia comuníquese con el área de mantenimiento. No olvide calificar el servicio.' ]],
+            columnStyles:{0:{cellWidth:CW*0.22},1:{cellWidth:CW*0.22},2:{cellWidth:CW*0.22},3:{cellWidth:CW*0.34, fontSize:6.3, halign:'left'}},
+            didDrawCell:(data)=>{
+                if(data.row.section!=='body' || data.column.index>2) return;
+                const labels=['Excelente','Bueno','Malo'];
+                const label=labels[data.column.index];
+                const marcado = s.calificacion===label;
+                const cx = data.cell.x+data.cell.width/2, cy = data.cell.y+data.cell.height/2-2.5, r=5.3;
+                if(marcado){ pdf.setDrawColor(192,57,43); pdf.setLineWidth(0.55); pdf.circle(cx,cy,r+1.4); }
+                pdf.setDrawColor(0); pdf.setLineWidth(0.3); pdf.circle(cx,cy,r);
+                pdf.setFillColor(0); pdf.circle(cx-1.8,cy-1.2,0.42,'F'); pdf.circle(cx+1.8,cy-1.2,0.42,'F');
+                pdf.setLineWidth(0.35);
+                if(label==='Excelente'){ pdf.line(cx-2.4,cy+0.8,cx,cy+1.6); pdf.line(cx,cy+1.6,cx+2.4,cy+0.8); }
+                else if(label==='Bueno'){ pdf.line(cx-2,cy+1.6,cx+2,cy+1.6); }
+                else { pdf.line(cx-2.4,cy+2.4,cx,cy+1.6); pdf.line(cx,cy+1.6,cx+2.4,cy+2.4); }
+                pdf.setFont('helvetica', marcado?'bold':'normal'); pdf.setFontSize(6.8); pdf.setTextColor(20);
+                const labelY = cy+r+3;
+                pdf.text(label, cx, labelY, {align:'center'});
+                if(marcado){
+                    // Check dibujado con líneas (no símbolo Unicode, que rompía la fuente)
+                    const wLabel = pdf.getTextWidth(label);
+                    const chkX = cx + wLabel/2 + 2.2, chkY = labelY - 1.2;
+                    pdf.setDrawColor(192,57,43); pdf.setLineWidth(0.5);
+                    pdf.line(chkX, chkY+0.6, chkX+0.8, chkY+1.4);
+                    pdf.line(chkX+0.8, chkY+1.4, chkX+2.1, chkY-0.9);
+                    pdf.setDrawColor(0);
+                }
+                pdf.setFont('helvetica','normal');
+            }
+        });
+        y = pdf.lastAutoTable.finalY;
+
+        // --- CONSTANCIA DE ASISTENCIA REALIZADA ---
+        pdf.autoTable({
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+            styles:{fontSize:7, cellPadding:1, lineColor:0, lineWidth:0.25, textColor:20},
+            head:[
+                [{content:'CONSTANCIA DE ASISTENCIA REALIZADA', colSpan:7, styles:styleHead}],
+                [{content:'Datos',styles:{fontStyle:'bold'}},{content:'Contratistas',styles:{fontStyle:'bold'}},{content:'Cédula',styles:{fontStyle:'bold'}},{content:'H. Entrada',styles:{fontStyle:'bold'}},{content:'H. Salida',styles:{fontStyle:'bold'}},{content:'Funcionario de la tienda',colSpan:2,styles:{fontStyle:'bold',halign:'center'}}]
+            ],
+            body:[
+                [s.tecnico||'', s.tecnicoCargo||'Técnico', s.tecnicoCedula||'', s.horaEntrada||'', s.horaSalida||'', 'Nombre:', s.funcNombre||''],
+                ['','','','','', 'Teléfono:', s.funcTel||''],
+                ['','','','','', 'Cargo:', s.funcCargo||'']
+            ]
+        });
+        y = pdf.lastAutoTable.finalY;
+
+        // --- FIRMAS (con imágenes reales de firma técnico y sello+firma jefe) ---
+        pdf.autoTable({
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+            styles:{fontSize:6.5, cellPadding:1, minCellHeight:17, lineColor:0, lineWidth:0.25, valign:'bottom', halign:'center', textColor:20},
+            body:[[ 'Firma Técnico Encargado / Cargo: '+(s.tecnicoCargo||'Técnico'), aprobadoConFirma ? '' : 'Pendiente de aprobación' ]],
+            columnStyles:{0:{cellWidth:CW*0.57},1:{cellWidth:CW*0.43, valign:'middle'}},
+            didDrawCell:(data)=>{
+                if(data.row.section!=='body') return;
+                const cx = data.cell.x + data.cell.width/2;
+                if(data.column.index===0 && firmaTecBase64){
+                    try{ pdf.addImage(firmaTecBase64,'PNG', cx-16, data.cell.y+1, 32, 8); }catch(err){}
+                }
+                if(data.column.index===1 && aprobadoConFirma){
+                    try{
+                        if(selloBase64) pdf.addImage(selloBase64,'PNG', cx-10, data.cell.y+1, 20, 9);
+                        if(firmaJefe)   pdf.addImage(firmaJefe,'PNG', cx-11, data.cell.y+4, 22, 7.5);
+                    }catch(err){}
+                }
+            }
+        });
+        y = pdf.lastAutoTable.finalY + 2;
+
+        // --- Nota final ---
+        pdf.setFont('helvetica','italic'); pdf.setFontSize(6); pdf.setTextColor(192,57,43);
+        const nota = 'Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni enmendados; este documento debe entregarse diligenciado en su totalidad de lo contrario no será válido.';
+        pdf.text(pdf.splitTextToSize(nota, CW), M+CW/2, y, {align:'center'});
+        pdf.setTextColor(20); pdf.setFont('helvetica','normal');
+
+        // --- PÁGINA 2: EVIDENCIAS FOTOGRÁFICAS (esto sí sigue siendo imagen, porque son fotos) ---
         const html2 = s.fotos?.filter(Boolean).length ? `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;background:#fff;padding:16px;width:794px;}table{width:100%;border-collapse:collapse;}</style>
 </head><body>
@@ -1138,11 +1124,11 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
     <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">DESPUÉS</td>
   </tr>
   <tr>
-    <td style="height:260px;text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
-      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:240px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
+    <td style="height:820px;text-align:center;vertical-align:middle;padding:14px;border:2px solid #000;">
+      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:790px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
     </td>
-    <td style="height:260px;text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
-      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:240px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
+    <td style="height:820px;text-align:center;vertical-align:middle;padding:14px;border:2px solid #000;">
+      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:790px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
     </td>
   </tr>
 </table>
@@ -1169,40 +1155,29 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
             return c;
         };
 
-        const {jsPDF} = window.jspdf;
-        const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
         const MARGIN = 0.5;
         const PAGE_W = 210, PAGE_H = 297;
         const AVAIL_W = PAGE_W - MARGIN*2, AVAIL_H = PAGE_H - MARGIN*2;
 
-        // Agrega una imagen ocupando el máximo posible de la hoja (márgenes
-        // de 0.5mm). Si el contenido es más alto que la hoja, se reduce
-        // ancho y alto en la misma proporción (nunca se aplasta solo la
-        // altura). Si el contenido es más corto que la hoja, se ESTIRA
-        // para llenar todo el alto disponible, para que no quede media
-        // página en blanco.
+        // Coloca la imagen SIN deformarla nunca. Si es más alta que la hoja,
+        // se reduce ancho y alto en la misma proporción. Si es más corta,
+        // se CENTRA verticalmente (no se estira — estirar fotos las deforma).
         function addImageFitPage(pdfDoc, canvas) {
             let w = AVAIL_W;
             let h = (canvas.height * w) / canvas.width;
+            let yPos;
             if (h > AVAIL_H) {
-                // Más alto que la hoja: se reduce proporcionalmente para que quepa.
                 const escala = AVAIL_H / h;
                 h = AVAIL_H;
                 w = w * escala;
+                yPos = MARGIN;
             } else {
-                // Más corto que la hoja: se estira para llenar todo el alto.
-                h = AVAIL_H;
+                yPos = MARGIN + (AVAIL_H - h) / 2;
             }
             const x = MARGIN + (AVAIL_W - w) / 2;
-            const y = MARGIN;
-            pdfDoc.addImage(canvas.toDataURL('image/jpeg', 0.82), 'JPEG', x, y, w, h);
+            pdfDoc.addImage(canvas.toDataURL('image/jpeg', 0.82), 'JPEG', x, yPos, w, h);
         }
 
-        // Página 1
-        const c1 = await renderHtml(html1);
-        addImageFitPage(pdf, c1);
-
-        // Página de fotos — siempre en página nueva
         if(html2) {
             pdf.addPage();
             const c2 = await renderHtml(html2);
@@ -1212,11 +1187,8 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
         pdf.save(`OT_${s.idMtto||s.id||'JD'}_${s.tiendaCodigo||''}.pdf`);
         toast('✅ PDF descargado');
     } catch(err) {
-        console.error(err);
-        const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-        const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-        a.download=`OT_${s.idMtto||'JD'}.html`; a.click();
-        toast('PDF no disponible — descargado como HTML');
+        console.error('Error generando PDF:', err);
+        toast('⚠️ Error generando PDF: '+err.message);
     }
 }
 
