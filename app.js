@@ -7,7 +7,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
     getFirestore, collection, addDoc, getDocs, deleteDoc,
-    doc, updateDoc, setDoc, getDoc, query, where, orderBy, writeBatch, runTransaction
+    doc, updateDoc, setDoc, getDoc, query, where, orderBy, writeBatch, runTransaction, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -142,24 +142,49 @@ function goTo(view, cid = null, tid = null, eid = null) {
 }
 
 // ============================================
+// TIEMPO REAL — SERVICIOS
+// ============================================
+// Se activa una sola vez. Mantiene el array 'servicios' sincronizado
+// automáticamente con Firestore (aprobaciones por QR desde otro
+// dispositivo, cambios de otro admin, etc.) sin recargar la página.
+let servicesListenerAttached = false;
+function escucharServiciosEnTiempoReal() {
+    if (servicesListenerAttached) return;
+    servicesListenerAttached = true;
+    onSnapshot(
+        query(collection(db, 'servicios'), orderBy('creadoEn', 'desc')),
+        (snap) => {
+            servicios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // El modal vive en #overlayEl, aparte de #mainContent, así que
+            // refrescar aquí no cierra ningún formulario abierto.
+            renderView();
+        },
+        (err) => { console.warn('Error en listener de servicios:', err); }
+    );
+}
+
+// ============================================
 // CARGA DE DATOS
 // ============================================
 async function cargarDatos() {
     const main = document.getElementById('mainContent');
     if (main) main.innerHTML = '<div style="text-align:center;padding:2rem;"><div class="loading-spinner"></div></div>';
     try {
-        const [cs, ts, es, ss, tecs] = await Promise.all([
+        const [cs, ts, es, tecs] = await Promise.all([
             getDocs(query(collection(db, 'empresas'),    orderBy('nombre'))),
             getDocs(query(collection(db, 'tiendas'),     orderBy('nombre'))),
             getDocs(collection(db, 'equipos')),
-            getDocs(query(collection(db, 'servicios'),   orderBy('creadoEn', 'desc'))),
             getDocs(query(collection(db, 'tecnicos'),    orderBy('nombre')))
         ]);
         clientes  = cs.docs.map(d => ({ id: d.id, ...d.data() }));
         tiendas   = ts.docs.map(d => ({ id: d.id, ...d.data() }));
         equipos   = es.docs.map(d => ({ id: d.id, ...d.data() }));
-        servicios = ss.docs.map(d => ({ id: d.id, ...d.data() }));
         tecnicos  = tecs.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (servicios.length === 0) {
+            // Primera carga: aseguramos tener datos antes de renderizar.
+            const ss = await getDocs(query(collection(db, 'servicios'), orderBy('creadoEn', 'desc')));
+            servicios = ss.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
     } catch (err) {
         if (main) main.innerHTML = `<div class="page" style="text-align:center;padding:2rem;">
             <p>Error al cargar datos</p>
@@ -167,6 +192,7 @@ async function cargarDatos() {
         </div>`;
         return;
     }
+    escucharServiciosEnTiempoReal();
     if (manejarRutaAprobacion()) return;
     if (manejarRutaTienda()) return;
     renderView();
@@ -1081,11 +1107,8 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
         if(!window.html2canvas) await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
         if(!window.jspdf)       await cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
 
-        // HTML página 1 — sin fotos (cortar en el marcador)
-        const MARCADOR_FOTOS = '<!-- INICIO_FOTOS -->';
-        const html1 = html.includes(MARCADOR_FOTOS) 
-            ? html.substring(0, html.indexOf(MARCADOR_FOTOS)) + '</body></html>'
-            : html;
+        // HTML página 1 — es el acta completa (las fotos van aparte, en html2)
+        const html1 = html;
 
         // HTML página 2 — solo fotos
         const html2 = s.fotos?.filter(Boolean).length ? `<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -1094,17 +1117,17 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
 <table style="margin-bottom:8px;">
   <tr><td style="background:#1a1a1a;color:#C9A84C;font-weight:700;text-align:center;font-size:9pt;padding:5px;border:2px solid #000;">EVIDENCIAS FOTOGRÁFICAS — OT ${s.idMtto||''} · ${s.tiendaNombre||s.tiendaCodigo||''}</td></tr>
 </table>
-<table style="width:100%;border-collapse:collapse;height:700px;">
+<table style="width:100%;border-collapse:collapse;">
   <tr>
     <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">ANTES</td>
     <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">DESPUÉS</td>
   </tr>
-  <tr style="height:340px;">
-    <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
-      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:320px;object-fit:contain;display:block;margin:0 auto;">`:''}
+  <tr>
+    <td style="height:260px;text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
+      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:240px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
     </td>
-    <td style="text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
-      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:320px;object-fit:contain;display:block;margin:0 auto;">`:''}
+    <td style="height:260px;text-align:center;vertical-align:middle;padding:10px;border:2px solid #000;">
+      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:240px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
     </td>
   </tr>
 </table>
@@ -1126,23 +1149,34 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
 
         const {jsPDF} = window.jspdf;
         const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+        const PAGE_W = 210, PAGE_H = 297;
+
+        // Agrega una imagen a la página actual escalada a A4 SIN deformarla.
+        // Si es más alta que la página, se reduce ancho y alto en la misma
+        // proporción (nunca se recorta solo la altura, que era lo que
+        // aplastaba/deformaba el contenido).
+        function addImageFitPage(pdfDoc, canvas) {
+            let w = PAGE_W;
+            let h = (canvas.height * w) / canvas.width;
+            if (h > PAGE_H) {
+                const escala = PAGE_H / h;
+                h = PAGE_H;
+                w = w * escala;
+            }
+            const x = (PAGE_W - w) / 2;
+            const y = 0;
+            pdfDoc.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, w, h);
+        }
 
         // Página 1
         const c1 = await renderHtml(html1);
-        const imgW = 210;
-        const imgH1 = (c1.height * imgW) / c1.width;
-        const pageH = 297;
-
-        // Renderizar acta completa en una sola imagen escalada a A4
-        // Si es más alta, se escala proporcionalmente para caber en una página
-        pdf.addImage(c1.toDataURL('image/png'),'PNG',0,0,imgW,Math.min(imgH1, pageH));
+        addImageFitPage(pdf, c1);
 
         // Página de fotos — siempre en página nueva
         if(html2) {
             pdf.addPage();
             const c2 = await renderHtml(html2);
-            const imgH2 = (c2.height * imgW) / c2.width;
-            pdf.addImage(c2.toDataURL('image/png'),'PNG',0,0,imgW,Math.min(imgH2, pageH));
+            addImageFitPage(pdf, c2);
         }
 
         pdf.save(`OT_${s.idMtto||s.id||'JD'}_${s.tiendaCodigo||''}.pdf`);
