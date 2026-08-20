@@ -7,7 +7,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
     getFirestore, collection, addDoc, getDocs, deleteDoc,
-    doc, updateDoc, setDoc, getDoc, query, orderBy, writeBatch, runTransaction
+    doc, updateDoc, setDoc, getDoc, query, where, orderBy, writeBatch, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -278,7 +278,7 @@ ${esAdmin() && servicios.filter(s=>!s.aprobado).length ? `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f0e8d8;font-size:.78rem;">
       <span style="font-weight:700;">${s.idMtto||'—'}</span>
       <span>${s.tiendaNombre||s.tiendaCodigo||'—'}</span>
-      <button class="ab" onclick="aprobarIncidencia('${s.id}')">Aprobar</button>
+      <button class="ab" onclick="generarQRAprobacion('${s.id}')">Generar QR</button>
     </div>`).join('')}
 </div>` : ''}
 </div>`;
@@ -450,7 +450,7 @@ ${ss.map(s=>`
     ${s.descripcion?`<div class="si-info">${s.descripcion.slice(0,80)}</div>`:''}
     <div style="display:flex;gap:.4rem;margin-top:.35rem;justify-content:flex-end;">
       <button class="ab" onclick="verPDF('${s.id}')">PDF</button>
-      ${esAdmin()&&!s.aprobado?`<button class="ab" onclick="aprobarIncidencia('${s.id}')">Aprobar</button>`:''}
+      ${esAdmin()&&!s.aprobado?`<button class="ab" onclick="generarQRAprobacion('${s.id}')">Generar QR</button>`:''}
       ${esAdmin()?`<button class="ib" onclick="eliminarServicio('${s.id}')">🗑️</button>`:''}
     </div>
   </div>`).join('')}
@@ -474,7 +474,7 @@ ${servicios.map(s=>`
     <div class="si-info">Técnico: ${s.tecnico||'—'}</div>
     <div style="display:flex;gap:.4rem;margin-top:.35rem;justify-content:flex-end;">
       <button class="ab" onclick="verPDF('${s.id}')">PDF</button>
-      ${esAdmin()&&!s.aprobado?`<button class="ab" onclick="aprobarIncidencia('${s.id}')">Aprobar</button>`:''}
+      ${esAdmin()&&!s.aprobado?`<button class="ab" onclick="generarQRAprobacion('${s.id}')">Generar QR</button>`:''}
     </div>
   </div>`).join('')}
 </div>`;
@@ -848,24 +848,28 @@ async function guardarIncidencia(eid, generarPDF) {
 // PDF
 // ============================================
 async function generarPDFOrden(s) {
-    // 1. Buscar firma del jefe en aprobaciones
-    let firmaJefe = s.firmaJefeQR || '';
-    if(!firmaJefe && s.aprobado) {
+    // 1. La firma y los datos de aprobación viven SOLO en 'aprobaciones'.
+    //    Solo se consultan si el servicio está realmente aprobado.
+    let firmaJefe = '';
+    let aprobacionData = null;
+    if (s.aprobado) {
         try {
-            const apSnap = await getDocs(collection(db,'aprobaciones'));
-            console.log('Buscando firma para servicioId:', s.id);
-            console.log('Aprobaciones encontradas:', apSnap.docs.length);
-            apSnap.docs.forEach(d => console.log('  -', d.id, 'servicioId:', d.data().servicioId));
-            const apDoc = apSnap.docs.find(d => d.data().servicioId === s.id);
-            if(apDoc) {
-                const data = apDoc.data();
-                firmaJefe = data.confirmarQRAprobacion || data.firmaJefeQR || '';
-                console.log('Firma encontrada:', firmaJefe ? 'SÍ ('+firmaJefe.length+' chars)' : 'NO');
-            } else {
-                console.warn('No se encontró aprobación para servicioId:', s.id);
+            const apQ = query(collection(db,'aprobaciones'), where('servicioId','==', s.id));
+            const apSnap = await getDocs(apQ);
+            // Si hubiera más de un registro de aprobación para el mismo servicio,
+            // se toma el más reciente (usado:true y con firma presente).
+            const apDoc = apSnap.docs.find(d => d.data().firmaJefeQR) || apSnap.docs[0];
+            if (apDoc) {
+                aprobacionData = apDoc.data();
+                firmaJefe = aprobacionData.firmaJefeQR || '';
             }
-        } catch(e) { console.warn('Error cargando firma:', e); }
+        } catch(e) {
+            console.warn('Error cargando datos de aprobación:', e);
+        }
     }
+    // Si el servicio está marcado como aprobado pero no hay firma real en
+    // 'aprobaciones', se trata como NO aprobado para efectos del sello/PDF.
+    const aprobadoConFirma = !!(s.aprobado && firmaJefe);
 
     // 2. Generar firma del técnico con Meddon como imagen PNG
     let firmaTecBase64 = '';
@@ -891,7 +895,7 @@ async function generarPDFOrden(s) {
     const aa  = String(hoy.getFullYear());
 
     let selloBase64 = '';
-    if(s.aprobado){
+    if(aprobadoConFirma){
         try { selloBase64 = await cargarImgBase64(SELLO_URL); } catch(e) {}
     }
 
@@ -1056,9 +1060,12 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
       <div style="border-top:1px solid #000;margin-top:2px;font-size:6.5pt;font-weight:700;">Firma Técnico Encargado / Cargo: ${s.tecnicoCargo||'Técnico'}</div>
     </td>
     <td colspan="3" style="padding:4px;height:80px;vertical-align:middle;text-align:center;position:relative;">
-      ${selloBase64?`<img src="${selloBase64}" style="max-height:60px;">`:
-        
-        '<div style="color:#aaa;font-size:7pt;">Pendiente de aprobación</div>'}
+      ${aprobadoConFirma
+        ? `<div style="position:relative;display:inline-block;">
+             <img src="${selloBase64}" style="max-height:60px;display:block;">
+             <img src="${firmaJefe}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-height:42px;max-width:120px;">
+           </div>`
+        : '<div style="color:#aaa;font-size:7pt;">Pendiente de aprobación</div>'}
     </td>
   </tr>
 </table>
@@ -1177,21 +1184,11 @@ function cargarImgBase64(url) {
 }
 
 // ============================================
-// APROBACIÓN ADMIN
+// (Se eliminó la aprobación manual de admin sin firma.
+// Toda aprobación válida debe pasar por el flujo de QR
+// firmado por el jefe de tienda: generarQRAprobacion /
+// confirmarAprobacionQR.)
 // ============================================
-window.aprobarIncidencia = async (sid) => {
-    if(!confirm('¿Aprobar esta incidencia y estampar el sello?')) return;
-    try {
-        await updateDoc(doc(db,'servicios',sid),{
-            aprobado:true,
-            pendienteAprobacion:false,
-            aprobadoEn:new Date().toISOString(),
-            aprobadoPor:sesionActual?.nombre||'Admin'
-        });
-        toast('✅ Incidencia aprobada');
-        await cargarDatos();
-    } catch(e){toast('Error: '+e.message);}
-};
 
 window.eliminarServicio = async (sid) => {
     if(!confirm('¿Eliminar esta incidencia?')) return;
@@ -1282,9 +1279,19 @@ window.confirmarAprobacionQR = async (token,sid) => {
     const firma=canvas&&canvas.width>0?canvas.toDataURL('image/png'):'';
     let gps=null;
     try{gps=await new Promise(res=>navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude}),()=>res(null),{timeout:5000}));}catch(e){}
+    const aprobadoEn = new Date().toISOString();
     try {
-        await updateDoc(doc(db,'servicios',sid),{aprobado:true,pendienteAprobacion:false,aprobadoEn:new Date().toISOString(),firmaJefeQR:firma,celularJefe:cel,gpsJefe:gps,userAgentJefe:navigator.userAgent});
-        await updateDoc(doc(db,'aprobaciones',token),{usado:true});
+        // Datos sensibles (firma, celular, gps, dispositivo) SOLO en 'aprobaciones'.
+        await updateDoc(doc(db,'aprobaciones',token),{
+            usado:true,
+            firmaJefeQR:firma,
+            celularJefe:cel,
+            gpsJefe:gps,
+            userAgentJefe:navigator.userAgent,
+            aprobadoEn
+        });
+        // 'servicios' solo guarda el estado, sin datos personales.
+        await updateDoc(doc(db,'servicios',sid),{aprobado:true,pendienteAprobacion:false,aprobadoEn});
         document.getElementById('aprobContenido').innerHTML=`<div style="text-align:center;padding:2rem;"><div style="font-size:3rem;margin-bottom:.75rem;">✅</div><div style="font-weight:700;font-size:1.1rem;color:#16a34a;">¡Aprobado!</div><div style="font-size:.82rem;color:#555;margin-top:.35rem;">Orden cerrada correctamente</div></div>`;
     } catch(e){console.error('Error aprobación:',e);alert('Error al aprobar: '+e.message);}
 };
