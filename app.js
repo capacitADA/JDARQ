@@ -926,12 +926,14 @@ async function generarPDFOrden(s) {
     }
 
     function chk(val, lista) {
-        return (lista||[]).includes(val) ? '<b>X</b>' : '&nbsp;';
+        return (lista||[]).includes(val)
+            ? '<span style="display:inline-block;min-width:13px;height:13px;line-height:13px;padding:0 1px;background:#000;color:#fff;font-weight:900;font-size:9pt;text-align:center;border-radius:2px;">X</span>'
+            : '<span style="display:inline-block;min-width:13px;height:13px;border:1px solid #999;border-radius:2px;">&nbsp;</span>';
     }
 
     const lineas = (txt, n) => {
         const arr = (txt||'').split('\n').concat(Array(n).fill('')).slice(0,n);
-        return arr.map((t,i)=>`<tr style="height:18px;border-bottom:${i===n-1?'2px':'1px'} solid ${i===n-1?'#000':'#ccc'};"><td style="padding:1px 4px;font-size:8pt;">${t}&nbsp;</td></tr>`).join('');
+        return arr.map((t,i)=>`<tr style="height:15px;border-bottom:${i===n-1?'2px':'1px'} solid ${i===n-1?'#000':'#ccc'};"><td style="padding:1px 4px;font-size:8pt;">${t}&nbsp;</td></tr>`).join('');
     };
 
     const evalRows = PARAMS_EVAL.map(p=>p.items.map((item,i)=>`
@@ -948,7 +950,7 @@ async function generarPDFOrden(s) {
 <style>
 @font-face{font-family:'Meddon';src:url('https://raw.githubusercontent.com/capacitADA/JDARQ/main/Meddon-Regular.ttf') format('truetype');}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;width:794px;}
+body{font-family:Arial,sans-serif;background:#fff;padding:7px;font-size:8pt;width:794px;}
 .blk{border:2px solid #000;border-collapse:collapse;width:100%;margin-top:-2px;}
 .blk td,.blk th{border:1px solid #000;padding:2px 5px;vertical-align:middle;font-size:7.5pt;}
 .hd{font-weight:700;text-align:center;font-size:8.5pt;padding:3px;background:#eee;}
@@ -1018,16 +1020,16 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
 </table>
 
 <table class="blk"><tr><td class="hd">Descripción detallada de la solicitud:</td></tr></table>
-<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.descripcion,4)}</table>
+<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.descripcion,3)}</table>
 
 <table class="blk"><tr><td class="hd">Actividades ejecutadas:</td></tr></table>
-<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.actividades,5)}</table>
+<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.actividades,4)}</table>
 
 <table class="blk"><tr><td class="hd">Repuestos cambiados:</td></tr></table>
-<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.repuestos,3)}</table>
+<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.repuestos,2)}</table>
 
 <table class="blk"><tr><td class="hd">Recomendaciones:</td></tr></table>
-<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.recomendaciones,3)}</table>
+<table style="width:100%;border-collapse:collapse;border-left:2px solid #000;border-right:2px solid #000;">${lineas(s.recomendaciones,2)}</table>
 
 <table class="blk">
   <tr><td colspan="4" class="hd">EVALUACIÓN DEL SERVICIO</td></tr>
@@ -1041,11 +1043,24 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
 </table>
 
 <table class="blk">
-  <tr><td colspan="3" class="hd">CALIFICA MI SERVICIO (Marque con una X)</td></tr>
+  <tr><td colspan="4" class="hd">CALIFICA MI SERVICIO (Marque con una X)</td></tr>
   <tr>
-    <td style="text-align:center;width:33%;">Excelente ${chk('Excelente',[s.calificacion])}</td>
-    <td style="text-align:center;width:33%;">Bueno ${chk('Bueno',[s.calificacion])}</td>
-    <td style="text-align:center;width:34%;">Malo ${chk('Malo',[s.calificacion])}</td>
+    ${[
+      {v:'Excelente', face:'<circle cx="17" cy="17" r="15" fill="#fff" stroke="#000" stroke-width="1.6"/><circle cx="11" cy="14" r="1.6" fill="#000"/><circle cx="23" cy="14" r="1.6" fill="#000"/><path d="M9 20 Q17 27 25 20" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>'},
+      {v:'Bueno', face:'<circle cx="17" cy="17" r="15" fill="#fff" stroke="#000" stroke-width="1.6"/><circle cx="11" cy="14" r="1.6" fill="#000"/><circle cx="23" cy="14" r="1.6" fill="#000"/><line x1="9" y1="22" x2="25" y2="22" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>'},
+      {v:'Malo', face:'<circle cx="17" cy="17" r="15" fill="#fff" stroke="#000" stroke-width="1.6"/><circle cx="11" cy="14" r="1.6" fill="#000"/><circle cx="23" cy="14" r="1.6" fill="#000"/><path d="M9 24 Q17 17 25 24" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"/>'}
+    ].map(o=>{
+      const marcado = s.calificacion===o.v;
+      return `<td style="text-align:center;width:22%;padding:5px 2px;">
+        <div style="display:inline-block;padding:3px;border-radius:50%;${marcado?'border:2.5px solid #c0392b;':'border:2.5px solid transparent;'}">
+          <svg width="34" height="34" viewBox="0 0 34 34">${o.face}</svg>
+        </div>
+        <div style="font-size:7.5pt;font-weight:${marcado?'900':'400'};margin-top:1px;">${o.v} ${marcado?'<span style="color:#c0392b;">✔</span>':''}</div>
+      </td>`;
+    }).join('')}
+    <td style="width:34%;font-size:6.3pt;text-align:left;padding:4px 6px;vertical-align:middle;border-left:2px solid #000;">
+      Cualquier queja, reclamo o sugerencia comuníquese con el área de mantenimiento. No olvide calificar el servicio.
+    </td>
   </tr>
 </table>
 
@@ -1079,17 +1094,17 @@ body{font-family:Arial,sans-serif;background:#fff;padding:16px;font-size:8pt;wid
     <td style="font-size:7pt;">${s.funcCargo||''}</td>
   </tr>
   <tr>
-    <td colspan="4" style="padding:4px;height:80px;vertical-align:bottom;text-align:center;">
+    <td colspan="4" style="padding:4px;height:65px;vertical-align:bottom;text-align:center;">
       ${firmaTecBase64
-        ? `<img src="${firmaTecBase64}" style="height:50px;display:block;">`
-        : `<div style="font-family:'Meddon',cursive;font-size:16pt;color:#1a1a6e;">${s.tecnico||''}</div>`}
+        ? `<img src="${firmaTecBase64}" style="height:42px;display:block;">`
+        : `<div style="font-family:'Meddon',cursive;font-size:15pt;color:#1a1a6e;">${s.tecnico||''}</div>`}
       <div style="border-top:1px solid #000;margin-top:2px;font-size:6.5pt;font-weight:700;">Firma Técnico Encargado / Cargo: ${s.tecnicoCargo||'Técnico'}</div>
     </td>
-    <td colspan="3" style="padding:4px;height:80px;vertical-align:middle;text-align:center;position:relative;">
+    <td colspan="3" style="padding:4px;height:65px;vertical-align:middle;text-align:center;position:relative;">
       ${aprobadoConFirma
         ? `<div style="position:relative;display:inline-block;">
-             <img src="${selloBase64}" style="max-height:60px;display:block;">
-             <img src="${firmaJefe}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-height:42px;max-width:120px;">
+             <img src="${selloBase64}" style="max-height:50px;display:block;">
+             <img src="${firmaJefe}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-height:36px;max-width:105px;">
            </div>`
         : '<div style="color:#aaa;font-size:7pt;">Pendiente de aprobación</div>'}
     </td>
