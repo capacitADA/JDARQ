@@ -1157,7 +1157,7 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
             iframe.contentDocument.write(htmlStr);
             iframe.contentDocument.close();
             await new Promise(r=>setTimeout(r,1500));
-            const c = await window.html2canvas(iframe.contentDocument.body,{scale:2.5,backgroundColor:'#fff',useCORS:true,allowTaint:true,logging:false,windowWidth:794});
+            const c = await window.html2canvas(iframe.contentDocument.body,{scale:1.8,backgroundColor:'#fff',useCORS:true,allowTaint:true,logging:false,windowWidth:794});
             document.body.removeChild(iframe);
             return c;
         };
@@ -1180,7 +1180,7 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
             }
             const x = (PAGE_W - w) / 2;
             const y = 0;
-            pdfDoc.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, w, h);
+            pdfDoc.addImage(canvas.toDataURL('image/jpeg', 0.82), 'JPEG', x, y, w, h);
         }
 
         // Página 1
