@@ -1157,29 +1157,44 @@ Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni e
             iframe.contentDocument.write(htmlStr);
             iframe.contentDocument.close();
             await new Promise(r=>setTimeout(r,1500));
-            const c = await window.html2canvas(iframe.contentDocument.body,{scale:1.8,backgroundColor:'#fff',useCORS:true,allowTaint:true,logging:false,windowWidth:794});
+            // Medir la altura REAL del contenido — nada de espacio en blanco
+            // de sobra "horneado" en la imagen capturada.
+            const alturaReal = Math.ceil(iframe.contentDocument.body.scrollHeight);
+            iframe.style.height = alturaReal + 'px';
+            const c = await window.html2canvas(iframe.contentDocument.body,{
+                scale:1.8, backgroundColor:'#fff', useCORS:true, allowTaint:true, logging:false,
+                windowWidth:794, windowHeight:alturaReal, height:alturaReal
+            });
             document.body.removeChild(iframe);
             return c;
         };
 
         const {jsPDF} = window.jspdf;
         const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+        const MARGIN = 0.5;
         const PAGE_W = 210, PAGE_H = 297;
+        const AVAIL_W = PAGE_W - MARGIN*2, AVAIL_H = PAGE_H - MARGIN*2;
 
-        // Agrega una imagen a la página actual escalada a A4 SIN deformarla.
-        // Si es más alta que la página, se reduce ancho y alto en la misma
-        // proporción (nunca se recorta solo la altura, que era lo que
-        // aplastaba/deformaba el contenido).
+        // Agrega una imagen ocupando el máximo posible de la hoja (márgenes
+        // de 0.5mm). Si el contenido es más alto que la hoja, se reduce
+        // ancho y alto en la misma proporción (nunca se aplasta solo la
+        // altura). Si el contenido es más corto que la hoja, se ESTIRA
+        // para llenar todo el alto disponible, para que no quede media
+        // página en blanco.
         function addImageFitPage(pdfDoc, canvas) {
-            let w = PAGE_W;
+            let w = AVAIL_W;
             let h = (canvas.height * w) / canvas.width;
-            if (h > PAGE_H) {
-                const escala = PAGE_H / h;
-                h = PAGE_H;
+            if (h > AVAIL_H) {
+                // Más alto que la hoja: se reduce proporcionalmente para que quepa.
+                const escala = AVAIL_H / h;
+                h = AVAIL_H;
                 w = w * escala;
+            } else {
+                // Más corto que la hoja: se estira para llenar todo el alto.
+                h = AVAIL_H;
             }
-            const x = (PAGE_W - w) / 2;
-            const y = 0;
+            const x = MARGIN + (AVAIL_W - w) / 2;
+            const y = MARGIN;
             pdfDoc.addImage(canvas.toDataURL('image/jpeg', 0.82), 'JPEG', x, y, w, h);
         }
 
