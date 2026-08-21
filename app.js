@@ -951,7 +951,7 @@ async function generarPDFOrden(s) {
 
         // --- INFORMACIÓN CONTRATISTA ---
         pdf.autoTable({
-            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', styles:styleBody,
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid', styles:styleBody,
             head:[[{content:'INFORMACIÓN CONTRATISTA', colSpan:4, styles:styleHead}]],
             body:[
                 [{content:'Razón Social:',styles:{fontStyle:'bold'}}, EMPRESA_NOMBRE, {content:'N° NIT:',styles:{fontStyle:'bold'}}, EMPRESA_NIT],
@@ -963,7 +963,7 @@ async function generarPDFOrden(s) {
 
         // --- INFORMACIÓN SOLICITANTE Y TIENDA ---
         pdf.autoTable({
-            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', styles:styleBody,
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid', styles:styleBody,
             head:[[{content:'INFORMACIÓN SOLICITANTE Y TIENDA D1', colSpan:6, styles:styleHead}]],
             body:[
                 [{content:'Nombre tienda:',styles:{fontStyle:'bold'}}, s.tiendaNombre||'', {content:'Cód. Tienda:',styles:{fontStyle:'bold'}}, s.tiendaCodigo||'', {content:'ID Incidencia:',styles:{fontStyle:'bold'}}, s.idMtto||''],
@@ -978,7 +978,7 @@ async function generarPDFOrden(s) {
         function tablaChecklist(titulo, filas, seleccionados) {
             const esArray = Array.isArray(seleccionados);
             pdf.autoTable({
-                startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+                startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
                 styles:{...styleBody, halign:'center', fontSize:6.8},
                 head:[[{content:titulo, colSpan:filas[0].length, styles:styleHead}]],
                 body:filas,
@@ -1003,7 +1003,7 @@ async function generarPDFOrden(s) {
         function bloqueTexto(titulo, texto, nLineas) {
             const lineasArr = (texto||'').split('\n').concat(Array(nLineas).fill('')).slice(0,nLineas);
             pdf.autoTable({
-                startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+                startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
                 styles:{fontSize:7.5, cellPadding:1, lineColor:0, lineWidth:0.25, minCellHeight:4.6, textColor:20},
                 head:[[{content:titulo, styles:{...styleHead, halign:'left'}}]],
                 body: lineasArr.map(l=>[l||' '])
@@ -1019,11 +1019,11 @@ async function generarPDFOrden(s) {
         const evalBody = [];
         PARAMS_EVAL.forEach(p => p.items.forEach((item,i) => evalBody.push([i===0?p.cat:'', item, 'X', ''])));
         pdf.autoTable({
-            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
             styles:{fontSize:7, cellPadding:1, lineColor:0, lineWidth:0.25, textColor:20},
             head:[
                 [{content:'EVALUACIÓN DEL SERVICIO', colSpan:4, styles:styleHead}],
-                [{content:'Parámetro',styles:{fontStyle:'bold',fontSize:7}},{content:'Descripción',styles:{fontStyle:'bold',fontSize:7}},{content:'SI',styles:{fontStyle:'bold',fontSize:7,halign:'center'}},{content:'NO',styles:{fontStyle:'bold',fontSize:7,halign:'center'}}]
+                [{content:'Parámetro',styles:{fontStyle:'bold',fontSize:7,fillColor:[238,238,238],textColor:20}},{content:'Descripción',styles:{fontStyle:'bold',fontSize:7,fillColor:[238,238,238],textColor:20}},{content:'SI',styles:{fontStyle:'bold',fontSize:7,halign:'center',fillColor:[238,238,238],textColor:20}},{content:'NO',styles:{fontStyle:'bold',fontSize:7,halign:'center',fillColor:[238,238,238],textColor:20}}]
             ],
             body: evalBody,
             columnStyles:{0:{cellWidth:26,fontStyle:'bold'},2:{cellWidth:9,halign:'center',fontStyle:'bold'},3:{cellWidth:9,halign:'center'}}
@@ -1032,7 +1032,7 @@ async function generarPDFOrden(s) {
 
         // --- CALIFICA MI SERVICIO (caritas dibujadas como vectores, no imagen) ---
         pdf.autoTable({
-            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
             styles:{fontSize:6.5, cellPadding:1, minCellHeight:19, lineColor:0, lineWidth:0.25, valign:'middle'},
             head:[[{content:'CALIFICA MI SERVICIO (Marque con una X)', colSpan:4, styles:styleHead}]],
             body:[[ '', '', '', 'Cualquier queja, reclamo o sugerencia comuníquese con el área de mantenimiento. No olvide calificar el servicio.' ]],
@@ -1069,11 +1069,11 @@ async function generarPDFOrden(s) {
 
         // --- CONSTANCIA DE ASISTENCIA REALIZADA ---
         pdf.autoTable({
-            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
             styles:{fontSize:7, cellPadding:1, lineColor:0, lineWidth:0.25, textColor:20},
             head:[
                 [{content:'CONSTANCIA DE ASISTENCIA REALIZADA', colSpan:7, styles:styleHead}],
-                [{content:'Datos',styles:{fontStyle:'bold'}},{content:'Contratistas',styles:{fontStyle:'bold'}},{content:'Cédula',styles:{fontStyle:'bold'}},{content:'H. Entrada',styles:{fontStyle:'bold'}},{content:'H. Salida',styles:{fontStyle:'bold'}},{content:'Funcionario de la tienda',colSpan:2,styles:{fontStyle:'bold',halign:'center'}}]
+                [{content:'Datos',styles:{fontStyle:'bold',fillColor:[238,238,238],textColor:20}},{content:'Contratistas',styles:{fontStyle:'bold',fillColor:[238,238,238],textColor:20}},{content:'Cédula',styles:{fontStyle:'bold',fillColor:[238,238,238],textColor:20}},{content:'H. Entrada',styles:{fontStyle:'bold',fillColor:[238,238,238],textColor:20}},{content:'H. Salida',styles:{fontStyle:'bold',fillColor:[238,238,238],textColor:20}},{content:'Funcionario de la tienda',colSpan:2,styles:{fontStyle:'bold',halign:'center',fillColor:[238,238,238],textColor:20}}]
             ],
             body:[
                 [s.tecnico||'', s.tecnicoCargo||'Técnico', s.tecnicoCedula||'', s.horaEntrada||'', s.horaSalida||'', 'Nombre:', s.funcNombre||''],
@@ -1085,7 +1085,7 @@ async function generarPDFOrden(s) {
 
         // --- FIRMAS (con imágenes reales de firma técnico y sello+firma jefe) ---
         pdf.autoTable({
-            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid',
+            startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
             styles:{fontSize:6.5, cellPadding:1, minCellHeight:17, lineColor:0, lineWidth:0.25, valign:'bottom', halign:'center', textColor:20},
             body:[[ 'Firma Técnico Encargado / Cargo: '+(s.tecnicoCargo||'Técnico'), aprobadoConFirma ? '' : 'Pendiente de aprobación' ]],
             columnStyles:{0:{cellWidth:CW*0.57},1:{cellWidth:CW*0.43, valign:'middle'}},
@@ -1110,6 +1110,14 @@ async function generarPDFOrden(s) {
         const nota = 'Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni enmendados; este documento debe entregarse diligenciado en su totalidad de lo contrario no será válido.';
         pdf.text(pdf.splitTextToSize(nota, CW), M+CW/2, y, {align:'center'});
         pdf.setTextColor(20); pdf.setFont('helvetica','normal');
+
+        // Candado de seguridad: la página 1 (acta) debe quedar en UNA sola
+        // hoja. Si por algún cálculo interno de las tablas se coló una
+        // página extra/fantasma antes de este punto, se elimina aquí para
+        // que nunca se vea una página en blanco o con contenido duplicado.
+        while (pdf.internal.getNumberOfPages() > 1) {
+            pdf.deletePage(pdf.internal.getNumberOfPages());
+        }
 
         // --- PÁGINA 2: EVIDENCIAS FOTOGRÁFICAS (esto sí sigue siendo imagen, porque son fotos) ---
         const html2 = s.fotos?.filter(Boolean).length ? `<!DOCTYPE html><html><head><meta charset="UTF-8">
