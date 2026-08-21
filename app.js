@@ -933,13 +933,13 @@ async function generarPDFOrden(s) {
 
         const {jsPDF} = window.jspdf;
         const pdf = new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
-        const M = 5, PW = 210, CW = PW - M*2;
+        const M = 4.5, PW = 210, CW = PW - M*2;
         let y = M;
 
         let logoB64 = ''; try { logoB64 = await cargarImgBase64(LOGO_URL); } catch(e){}
 
         const styleHead = {fillColor:[238,238,238], textColor:20, fontStyle:'bold', halign:'center', fontSize:8};
-        const styleBody = {fontSize:7.5, cellPadding:1.3, lineColor:0, lineWidth:0.25, textColor:20};
+        const styleBody = {fontSize:7.5, cellPadding:1.1, lineColor:0, lineWidth:0.25, textColor:20};
 
         // --- ENCABEZADO ---
         pdf.setDrawColor(0); pdf.setLineWidth(0.4);
@@ -987,10 +987,15 @@ async function generarPDFOrden(s) {
                     const val = data.cell.raw;
                     const marcado = esArray ? seleccionados.includes(val) : val===seleccionados;
                     if(!marcado) return;
+                    pdf.setFont('helvetica','normal'); pdf.setFontSize(6.8);
+                    const wLabel = pdf.getTextWidth(String(val));
+                    const boxSize = 3.6;
+                    const boxX = data.cell.x + data.cell.width/2 + wLabel/2 + 1.3;
+                    const boxY = data.cell.y + data.cell.height/2 - boxSize/2;
                     pdf.setFillColor(0,0,0);
-                    pdf.rect(data.cell.x+0.4, data.cell.y+0.4, data.cell.width-0.8, data.cell.height-0.8, 'F');
-                    pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.8);
-                    pdf.text(String(val), data.cell.x+data.cell.width/2, data.cell.y+data.cell.height/2+0.9, {align:'center'});
+                    pdf.rect(boxX, boxY, boxSize, boxSize, 'F');
+                    pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.2);
+                    pdf.text('X', boxX+boxSize/2, boxY+boxSize/2+1, {align:'center'});
                     pdf.setTextColor(20); pdf.setFont('helvetica','normal');
                 }
             });
@@ -1004,7 +1009,7 @@ async function generarPDFOrden(s) {
             const lineasArr = (texto||'').split('\n').concat(Array(nLineas).fill('')).slice(0,nLineas);
             pdf.autoTable({
                 startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
-                styles:{fontSize:7.5, cellPadding:1, lineColor:0, lineWidth:0.25, minCellHeight:4.6, textColor:20},
+                styles:{fontSize:7.5, cellPadding:0.8, lineColor:0, lineWidth:0.25, minCellHeight:4.2, textColor:20},
                 head:[[{content:titulo, styles:{...styleHead, halign:'left'}}]],
                 body: lineasArr.map(l=>[l||' '])
             });
@@ -1033,7 +1038,7 @@ async function generarPDFOrden(s) {
         // --- CALIFICA MI SERVICIO (caritas dibujadas como vectores, no imagen) ---
         pdf.autoTable({
             startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
-            styles:{fontSize:6.5, cellPadding:1, minCellHeight:19, lineColor:0, lineWidth:0.25, valign:'middle'},
+            styles:{fontSize:6.5, cellPadding:1, minCellHeight:17.5, lineColor:0, lineWidth:0.25, valign:'middle'},
             head:[[{content:'CALIFICA MI SERVICIO (Marque con una X)', colSpan:4, styles:styleHead}]],
             body:[[ '', '', '', 'Cualquier queja, reclamo o sugerencia comuníquese con el área de mantenimiento. No olvide calificar el servicio.' ]],
             columnStyles:{0:{cellWidth:CW*0.22},1:{cellWidth:CW*0.22},2:{cellWidth:CW*0.22},3:{cellWidth:CW*0.34, fontSize:6.3, halign:'left'}},
@@ -1042,7 +1047,7 @@ async function generarPDFOrden(s) {
                 const labels=['Excelente','Bueno','Malo'];
                 const label=labels[data.column.index];
                 const marcado = s.calificacion===label;
-                const cx = data.cell.x+data.cell.width/2, cy = data.cell.y+data.cell.height/2-2.5, r=5.3;
+                const cx = data.cell.x+data.cell.width/2, cy = data.cell.y+data.cell.height/2-2.2, r=4.9;
                 if(marcado){ pdf.setDrawColor(192,57,43); pdf.setLineWidth(0.55); pdf.circle(cx,cy,r+1.4); }
                 pdf.setDrawColor(0); pdf.setLineWidth(0.3); pdf.circle(cx,cy,r);
                 pdf.setFillColor(0); pdf.circle(cx-1.8,cy-1.2,0.42,'F'); pdf.circle(cx+1.8,cy-1.2,0.42,'F');
@@ -1086,7 +1091,7 @@ async function generarPDFOrden(s) {
         // --- FIRMAS (con imágenes reales de firma técnico y sello+firma jefe) ---
         pdf.autoTable({
             startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
-            styles:{fontSize:6.5, cellPadding:1, minCellHeight:17, lineColor:0, lineWidth:0.25, valign:'bottom', halign:'center', textColor:20},
+            styles:{fontSize:6.5, cellPadding:1, minCellHeight:15, lineColor:0, lineWidth:0.25, valign:'bottom', halign:'center', textColor:20},
             body:[[ 'Firma Técnico Encargado / Cargo: '+(s.tecnicoCargo||'Técnico'), aprobadoConFirma ? '' : 'Pendiente de aprobación' ]],
             columnStyles:{0:{cellWidth:CW*0.57},1:{cellWidth:CW*0.43, valign:'middle'}},
             didDrawCell:(data)=>{
@@ -1110,14 +1115,6 @@ async function generarPDFOrden(s) {
         const nota = 'Nota: Se debe diligenciar los campos de firma clara y legible, sin tachones ni enmendados; este documento debe entregarse diligenciado en su totalidad de lo contrario no será válido.';
         pdf.text(pdf.splitTextToSize(nota, CW), M+CW/2, y, {align:'center'});
         pdf.setTextColor(20); pdf.setFont('helvetica','normal');
-
-        // Candado de seguridad: la página 1 (acta) debe quedar en UNA sola
-        // hoja. Si por algún cálculo interno de las tablas se coló una
-        // página extra/fantasma antes de este punto, se elimina aquí para
-        // que nunca se vea una página en blanco o con contenido duplicado.
-        while (pdf.internal.getNumberOfPages() > 1) {
-            pdf.deletePage(pdf.internal.getNumberOfPages());
-        }
 
         // --- PÁGINA 2: EVIDENCIAS FOTOGRÁFICAS (esto sí sigue siendo imagen, porque son fotos) ---
         const html2 = s.fotos?.filter(Boolean).length ? `<!DOCTYPE html><html><head><meta charset="UTF-8">
