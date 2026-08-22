@@ -1038,7 +1038,7 @@ async function generarPDFOrden(s) {
         // --- CALIFICA MI SERVICIO (caritas dibujadas como vectores, no imagen) ---
         pdf.autoTable({
             startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
-            styles:{fontSize:6.5, cellPadding:1, minCellHeight:17.5, lineColor:0, lineWidth:0.25, valign:'middle'},
+            styles:{fontSize:6.5, cellPadding:1, minCellHeight:13, lineColor:0, lineWidth:0.25, valign:'middle'},
             head:[[{content:'CALIFICA MI SERVICIO (Marque con una X)', colSpan:4, styles:styleHead}]],
             body:[[ '', '', '', 'Cualquier queja, reclamo o sugerencia comuníquese con el área de mantenimiento. No olvide calificar el servicio.' ]],
             columnStyles:{0:{cellWidth:CW*0.22},1:{cellWidth:CW*0.22},2:{cellWidth:CW*0.22},3:{cellWidth:CW*0.34, fontSize:6.3, halign:'left'}},
@@ -1047,16 +1047,16 @@ async function generarPDFOrden(s) {
                 const labels=['Excelente','Bueno','Malo'];
                 const label=labels[data.column.index];
                 const marcado = s.calificacion===label;
-                const cx = data.cell.x+data.cell.width/2, cy = data.cell.y+data.cell.height/2-2.2, r=4.9;
-                if(marcado){ pdf.setDrawColor(192,57,43); pdf.setLineWidth(0.55); pdf.circle(cx,cy,r+1.4); }
-                pdf.setDrawColor(0); pdf.setLineWidth(0.3); pdf.circle(cx,cy,r);
-                pdf.setFillColor(0); pdf.circle(cx-1.8,cy-1.2,0.42,'F'); pdf.circle(cx+1.8,cy-1.2,0.42,'F');
-                pdf.setLineWidth(0.35);
-                if(label==='Excelente'){ pdf.line(cx-2.4,cy+0.8,cx,cy+1.6); pdf.line(cx,cy+1.6,cx+2.4,cy+0.8); }
-                else if(label==='Bueno'){ pdf.line(cx-2,cy+1.6,cx+2,cy+1.6); }
-                else { pdf.line(cx-2.4,cy+2.4,cx,cy+1.6); pdf.line(cx,cy+1.6,cx+2.4,cy+2.4); }
-                pdf.setFont('helvetica', marcado?'bold':'normal'); pdf.setFontSize(6.8); pdf.setTextColor(20);
-                const labelY = cy+r+3;
+                const cx = data.cell.x+data.cell.width/2, cy = data.cell.y+data.cell.height/2-1.7, r=3.8;
+                if(marcado){ pdf.setDrawColor(192,57,43); pdf.setLineWidth(0.5); pdf.circle(cx,cy,r+1.1); }
+                pdf.setDrawColor(0); pdf.setLineWidth(0.28); pdf.circle(cx,cy,r);
+                pdf.setFillColor(0); pdf.circle(cx-1.4,cy-0.95,0.34,'F'); pdf.circle(cx+1.4,cy-0.95,0.34,'F');
+                pdf.setLineWidth(0.3);
+                if(label==='Excelente'){ pdf.line(cx-1.9,cy+0.65,cx,cy+1.25); pdf.line(cx,cy+1.25,cx+1.9,cy+0.65); }
+                else if(label==='Bueno'){ pdf.line(cx-1.6,cy+1.25,cx+1.6,cy+1.25); }
+                else { pdf.line(cx-1.9,cy+1.9,cx,cy+1.25); pdf.line(cx,cy+1.25,cx+1.9,cy+1.9); }
+                pdf.setFont('helvetica', marcado?'bold':'normal'); pdf.setFontSize(6.5); pdf.setTextColor(20);
+                const labelY = cy+r+2.6;
                 pdf.text(label, cx, labelY, {align:'center'});
                 if(marcado){
                     // Check dibujado con líneas (no símbolo Unicode, que rompía la fuente)
@@ -1091,7 +1091,7 @@ async function generarPDFOrden(s) {
         // --- FIRMAS (con imágenes reales de firma técnico y sello+firma jefe) ---
         pdf.autoTable({
             startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
-            styles:{fontSize:6.5, cellPadding:1, minCellHeight:15, lineColor:0, lineWidth:0.25, valign:'bottom', halign:'center', textColor:20},
+            styles:{fontSize:6.5, cellPadding:1, minCellHeight:16, lineColor:0, lineWidth:0.25, valign:'bottom', halign:'center', textColor:20},
             body:[[ 'Firma Técnico Encargado / Cargo: '+(s.tecnicoCargo||'Técnico'), aprobadoConFirma ? '' : 'Pendiente de aprobación' ]],
             columnStyles:{0:{cellWidth:CW*0.57},1:{cellWidth:CW*0.43, valign:'middle'}},
             didDrawCell:(data)=>{
@@ -1102,8 +1102,8 @@ async function generarPDFOrden(s) {
                 }
                 if(data.column.index===1 && aprobadoConFirma){
                     try{
-                        if(selloBase64) pdf.addImage(selloBase64,'PNG', cx-10, data.cell.y+1, 20, 9);
-                        if(firmaJefe)   pdf.addImage(firmaJefe,'PNG', cx-11, data.cell.y+4, 22, 7.5);
+                        if(selloBase64) pdf.addImage(selloBase64,'PNG', cx-14, data.cell.y+0.5, 28, 12.5);
+                        if(firmaJefe)   pdf.addImage(firmaJefe,'PNG', cx-15, data.cell.y+4.5, 30, 10);
                     }catch(err){}
                 }
             }
@@ -1129,11 +1129,11 @@ async function generarPDFOrden(s) {
     <td style="width:50%;font-weight:700;font-size:8pt;text-align:center;padding:4px;border:2px solid #000;background:#f5f5f5;">DESPUÉS</td>
   </tr>
   <tr>
-    <td style="height:820px;text-align:center;vertical-align:middle;padding:14px;border:2px solid #000;">
-      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:790px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
+    <td style="height:340px;text-align:center;vertical-align:middle;padding:12px;border:2px solid #000;">
+      ${s.fotos[0]?`<img src="${s.fotos[0]}" style="max-width:100%;max-height:315px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
     </td>
-    <td style="height:820px;text-align:center;vertical-align:middle;padding:14px;border:2px solid #000;">
-      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:790px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
+    <td style="height:340px;text-align:center;vertical-align:middle;padding:12px;border:2px solid #000;">
+      ${s.fotos[1]?`<img src="${s.fotos[1]}" style="max-width:100%;max-height:315px;object-fit:contain;display:block;margin:0 auto;">`:'<span style="color:#bbb;font-size:7pt;">Sin foto</span>'}
     </td>
   </tr>
 </table>
