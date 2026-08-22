@@ -1091,7 +1091,7 @@ async function generarPDFOrden(s) {
         // --- FIRMAS (con imágenes reales de firma técnico y sello+firma jefe) ---
         pdf.autoTable({
             startY:y, margin:{left:M,right:M}, tableWidth:CW, theme:'grid', pageBreak:'avoid',
-            styles:{fontSize:6.5, cellPadding:1, minCellHeight:16, lineColor:0, lineWidth:0.25, valign:'bottom', halign:'center', textColor:20},
+            styles:{fontSize:6.5, cellPadding:1, minCellHeight:18, lineColor:0, lineWidth:0.25, valign:'bottom', halign:'center', textColor:20},
             body:[[ 'Firma Técnico Encargado / Cargo: '+(s.tecnicoCargo||'Técnico'), aprobadoConFirma ? '' : 'Pendiente de aprobación' ]],
             columnStyles:{0:{cellWidth:CW*0.57},1:{cellWidth:CW*0.43, valign:'middle'}},
             didDrawCell:(data)=>{
@@ -1102,8 +1102,14 @@ async function generarPDFOrden(s) {
                 }
                 if(data.column.index===1 && aprobadoConFirma){
                     try{
-                        if(selloBase64) pdf.addImage(selloBase64,'PNG', cx-14, data.cell.y+0.5, 28, 12.5);
-                        if(firmaJefe)   pdf.addImage(firmaJefe,'PNG', cx-15, data.cell.y+4.5, 30, 10);
+                        const selloW=32, selloH=16, selloX=cx-selloW/2, selloY=data.cell.y+0.5;
+                        if(selloBase64) pdf.addImage(selloBase64,'PNG', selloX, selloY, selloW, selloH);
+                        if(firmaJefe){
+                            const firmaW=22, firmaH=7.5;
+                            const firmaX = cx - firmaW/2;
+                            const firmaY = selloY + (selloH-firmaH)/2;
+                            pdf.addImage(firmaJefe,'PNG', firmaX, firmaY, firmaW, firmaH);
+                        }
                     }catch(err){}
                 }
             }
